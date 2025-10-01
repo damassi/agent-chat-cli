@@ -5,11 +5,14 @@
   "private": true,
   "scripts": {
     "start": "bun run src/index.tsx",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/react": "^19.1.16",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.3",
     "prettier": "^3.6.2"
   },
   "peerDependencies": {
@@ -23,5 +26,14 @@
     "ink-text-input": "^6.0.0",
     "marked": "^16.3.0",
     "react": "^19.1.1"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "bunx oxlint",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   }
 }
