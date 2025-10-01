@@ -4,7 +4,7 @@ A bare-bones, terminal-based chat CLI built to explore the new [Claude Agent SDK
 
 MCP servers can be configured in [agent-chat-cli.config.ts](agent-chat-cli.config.ts).
 
-https://github.com/user-attachments/assets/466c98c3-ce36-4916-b196-6650921facbd
+https://github.com/user-attachments/assets/72169f2f-15f0-4acd-b069-ceceeae20cfd
 
 ### Setup
 
@@ -41,8 +41,6 @@ MCP servers and system prompts are configured in `agent-chat-cli.config.ts`.
 To add specific instructions for each MCP server, create a markdown file in `src/prompts` and reference it in the config:
 
 ```ts
-import { getPrompt } from "./src/utils/getPrompt"
-
 const config = {
   mcpServers: {
     fooServer: {
