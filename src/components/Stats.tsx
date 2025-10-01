@@ -10,7 +10,7 @@ export const Stats: React.FC = () => {
 
   return (
     <Box marginBottom={1}>
-      <Text>{stats}</Text>
+      <Text dimColor>{stats}</Text>
     </Box>
   )
 }

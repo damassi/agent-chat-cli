@@ -61,7 +61,7 @@ export const AgentChat: React.FC = () => {
                 switch (true) {
                   case entry.type === "message": {
                     return (
-                      <Box key={idx} flexDirection="column" marginBottom={1}>
+                      <Box flexDirection="column" marginBottom={1}>
                         <Text
                           bold
                           color={entry.role === "user" ? "green" : "blue"}
@@ -82,7 +82,7 @@ export const AgentChat: React.FC = () => {
                     const { serverName, toolName } = getToolInfo(entry.name)
 
                     return (
-                      <Box key={idx} flexDirection="column" marginBottom={1}>
+                      <Box flexDirection="column" marginBottom={1}>
                         <Box>
                           {serverName ? (
                             <>

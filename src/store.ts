@@ -1,3 +1,4 @@
+import type { McpServerConfig } from "@anthropic-ai/claude-agent-sdk"
 import {
   action,
   computed,
@@ -25,40 +26,48 @@ export interface ToolUse {
 
 export type TimelineEntry = Message | ToolUse
 
+type McpServerConfigWithPrompt = McpServerConfig & {
+  prompt?: string
+}
+
+export interface AgentChatConfig {
+  mcpServers: Record<string, McpServerConfigWithPrompt>
+}
+
 export interface StoreModel {
-  // State
   chatHistory: TimelineEntry[]
-  messageQueue: { resolve: (value: string) => void }[]
-  sessionId?: string
-  mcpServers: McpServerStatus[]
-  input: string
-  isProcessing: boolean
+  config: AgentChatConfig | null
   currentAssistantMessage: string
   currentToolUses: ToolUse[]
-  stats?: string | null
+  input: string
+  isProcessing: boolean
+  mcpServers: McpServerStatus[]
+  messageQueue: { resolve: (value: string) => void }[]
+  sessionId?: string
   shouldExit: boolean
+  stats?: string | null
 
   // Computed
   isBooted: Computed<StoreModel, boolean>
 
   // Actions
   addChatHistoryEntry: Action<StoreModel, TimelineEntry>
-  setSessionId: Action<StoreModel, string>
-  setMcpServers: Action<StoreModel, McpServerStatus[]>
+  addToolUse: Action<StoreModel, ToolUse>
+  appendcurrentAssistantMessage: Action<StoreModel, string>
+  clearCurrentAssistantMessage: Action<StoreModel>
+  clearToolUses: Action<StoreModel>
+  setConfig: Action<StoreModel, AgentChatConfig>
+  setcurrentAssistantMessage: Action<StoreModel, string>
+  setCurrentToolUses: Action<StoreModel, ToolUse[]>
   setInput: Action<StoreModel, string>
   setIsProcessing: Action<StoreModel, boolean>
-  setcurrentAssistantMessage: Action<StoreModel, string>
-  appendcurrentAssistantMessage: Action<StoreModel, string>
-  setCurrentToolUses: Action<StoreModel, ToolUse[]>
-  addToolUse: Action<StoreModel, ToolUse>
-  setStats: Action<StoreModel, string | null>
+  setMcpServers: Action<StoreModel, McpServerStatus[]>
+  setSessionId: Action<StoreModel, string>
   setShouldExit: Action<StoreModel, boolean>
-  clearcurrentAssistantMessage: Action<StoreModel>
-  clearToolUses: Action<StoreModel>
+  setStats: Action<StoreModel, string | null>
 }
 
 export const AgentStore = createContextStore<StoreModel>({
-  // Initial state
   chatHistory: [],
   messageQueue: [],
   sessionId: undefined,
@@ -69,6 +78,7 @@ export const AgentStore = createContextStore<StoreModel>({
   currentToolUses: [],
   stats: undefined,
   shouldExit: false,
+  config: null,
 
   // Computed
   isBooted: computed((state) => !!state.sessionId),
@@ -118,11 +128,15 @@ export const AgentStore = createContextStore<StoreModel>({
     state.shouldExit = payload
   }),
 
-  clearcurrentAssistantMessage: action((state) => {
+  clearCurrentAssistantMessage: action((state) => {
     state.currentAssistantMessage = ""
   }),
 
   clearToolUses: action((state) => {
     state.currentToolUses = []
+  }),
+
+  setConfig: action((state, payload) => {
+    state.config = payload
   }),
 })

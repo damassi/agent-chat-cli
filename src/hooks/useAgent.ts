@@ -1,19 +1,28 @@
 import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import { AgentStore } from "../store"
 import { loadConfig } from "../utils/loadConfig"
-
-type AgentChatConfig = Awaited<ReturnType<typeof loadConfig>>
+import { buildSystemPrompt } from "../utils/getPrompt"
 
 export function useAgent() {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
+  const sessionId = AgentStore.useStoreState((state) => state.sessionId)
+  const config = AgentStore.useStoreState((state) => state.config)
   const actions = AgentStore.useStoreActions((actions) => actions)
   const currentAssistantMessageRef = useRef("")
-  const [config, setConfig] = useState<AgentChatConfig | null>(null)
 
   useEffect(() => {
-    loadConfig().then(setConfig).catch(console.error)
-  }, [])
+    const initConfig = async () => {
+      try {
+        const loadedConfig = await loadConfig()
+        actions.setConfig(loadedConfig)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    initConfig()
+  }, [actions])
 
   useEffect(() => {
     if (!config) return
@@ -21,14 +30,13 @@ export function useAgent() {
     const mcpServers = config.mcpServers
 
     async function runAgent() {
-      // Build combined system prompt from MCP server prompts
-      const mcpPrompts = Object.entries(mcpServers)
-        .filter(([_, config]) => config.prompt)
-        .map(([name, config]) => `# ${name} MCP Server\n\n${config.prompt}`)
-        .join("\n\n")
+      const mcpPrompts = buildSystemPrompt(mcpServers)
 
       const response = query({
-        prompt: generateMessages(messageQueue) as AsyncGenerator<any>,
+        prompt: generateMessages(
+          messageQueue,
+          sessionId
+        ) as AsyncGenerator<any>,
         options: {
           model: "sonnet",
           permissionMode: "bypassPermissions",
@@ -43,12 +51,14 @@ export function useAgent() {
         },
       })
 
-      // Get MCP server status
       try {
         const servers = await response.mcpServerStatus()
         actions.setMcpServers(servers)
       } catch (error) {
-        console.error("Failed to get MCP server status:", error)
+        console.error(
+          "[agent-chat-cli] Failed to get MCP server status:",
+          error
+        )
       }
 
       try {
@@ -66,24 +76,25 @@ export function useAgent() {
                 actions.appendcurrentAssistantMessage(content.text)
                 currentAssistantMessageRef.current += content.text
               } else if (content.type === "tool_use") {
-                // Before adding tool use, flush any accumulated assistant text to chat history
                 if (currentAssistantMessageRef.current) {
+                  // Before adding tool use, flush any accumulated assistant text
+                  // to chat history
                   actions.addChatHistoryEntry({
                     type: "message",
                     role: "assistant",
                     content: currentAssistantMessageRef.current,
                   })
+
                   currentAssistantMessageRef.current = ""
-                  actions.clearcurrentAssistantMessage()
+                  actions.clearCurrentAssistantMessage()
                 }
 
-                // Now add the tool use to chat history
                 actions.addChatHistoryEntry({
                   type: "tool_use",
                   name: content.name,
                   input: content.input as Record<string, unknown>,
                 })
-                // Also track for current display
+
                 actions.addToolUse({
                   type: "tool_use",
                   name: content.name,
@@ -92,48 +103,46 @@ export function useAgent() {
               }
             }
           } else if (message.type === "result") {
-            // Flush any remaining assistant text to chat history
             const finalMessage = currentAssistantMessageRef.current
+
             if (finalMessage) {
               actions.addChatHistoryEntry({
                 type: "message",
                 role: "assistant",
                 content: finalMessage,
               })
-              actions.clearcurrentAssistantMessage()
+
+              actions.clearCurrentAssistantMessage()
               currentAssistantMessageRef.current = ""
             }
 
             if (!message.is_error) {
               actions.setStats(
-                `✅ Completed in ${(message.duration_ms / 1000).toFixed(
+                `Completed in ${(message.duration_ms / 1000).toFixed(
                   2
                 )}s | Cost: $${message.total_cost_usd.toFixed(4)} | Turns: ${
                   message.num_turns
                 }`
               )
             } else {
-              actions.setStats(`❌ Error: ${message.subtype}`)
+              actions.setStats(`[agent-chat-cli] Error: ${message.subtype}`)
             }
             actions.setIsProcessing(false)
           }
         }
       } catch (error) {
-        actions.setStats(`❌ Error: ${error}`)
+        actions.setStats(`[agent-chat-cli] Error: ${error}`)
         actions.setIsProcessing(false)
       }
     }
 
     runAgent()
-
-    return () => {
-      // Cleanup
-    }
   }, [messageQueue, actions, config])
 }
 
 const generateMessages = async function* generateMessages(
-  messageQueue: { resolve: (value: string) => void }[]
+  messageQueue: { resolve: (value: string) => void }[],
+  sessionId?: string
 ) {
   while (true) {
     const userMessage = await new Promise<string>((resolve) => {
@@ -150,7 +159,7 @@ const generateMessages = async function* generateMessages(
 
     yield {
       type: "user" as const,
-      session_id: "",
+      session_id: sessionId || "",
       message: {
         role: "user" as const,
         content: userMessage,

@@ -13,6 +13,7 @@ Default to using Bun instead of Node.js.
 
 - Prefer `const foo = () => { ... }` over `function foo`
 - Prefer named exports vs default exports
+- Prefer try/catch over vanilla promises
 - Never use implicit returns in react components. They should ONLY be used in one-liners.
 
 ## APIs

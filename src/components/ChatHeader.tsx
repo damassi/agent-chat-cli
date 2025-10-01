@@ -35,10 +35,6 @@ export const ChatHeader: React.FC = () => {
         </Text>
       )}
 
-      {store.isBooted && (
-        <Text dimColor>Session ID: {store.sessionId?.slice(0, 8)}...</Text>
-      )}
-
       <Box marginTop={1} />
 
       <Text dimColor>
