@@ -1,6 +1,11 @@
 import type { McpServerConfig } from "@anthropic-ai/claude-agent-sdk"
+import { readPrompt } from "./utils/readPrompt"
 
-export const mcpServers: Record<string, McpServerConfig> = {
+type McpServerConfigWithPrompt = McpServerConfig & {
+  prompt?: string
+}
+
+export const mcpServers: Record<string, McpServerConfigWithPrompt> = {
   artsymcp: {
     command: "npx",
     args: [
@@ -15,6 +20,7 @@ export const mcpServers: Record<string, McpServerConfig> = {
       X_ACCESS_TOKEN: process.env.ARTSY_MCP_X_ACCESS_TOKEN!,
       X_USER_ID: process.env.ARTSY_MCP_X_USER_ID!,
     },
+    prompt: readPrompt("artsy-mcp.md"),
   },
   github: {
     command: "npx",
@@ -27,5 +33,6 @@ export const mcpServers: Record<string, McpServerConfig> = {
     env: {
       GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN!,
     },
+    prompt: readPrompt("github.md"),
   },
 }

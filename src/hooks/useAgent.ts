@@ -10,12 +10,25 @@ export function useAgent() {
 
   useEffect(() => {
     async function runAgent() {
+      // Build combined system prompt from MCP server prompts
+      const mcpPrompts = Object.entries(mcpServers)
+        .filter(([_, config]) => config.prompt)
+        .map(([name, config]) => `# ${name} MCP Server\n\n${config.prompt}`)
+        .join("\n\n")
+
       const response = query({
         prompt: generateMessages(messageQueue) as AsyncGenerator<any>,
         options: {
           model: "sonnet",
           permissionMode: "bypassPermissions",
           mcpServers,
+          systemPrompt: mcpPrompts
+            ? {
+                type: "preset",
+                preset: "claude_code",
+                append: mcpPrompts,
+              }
+            : undefined,
         },
       })
 

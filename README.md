@@ -31,3 +31,15 @@ bun start
 You'll see a prompt where you can type your questions or requests.
 
 Type `exit` to quit.
+
+#### Updating MCP System Prompts
+
+If you'd like to add specific instructions for each connected tool, add a markdown file to `src/prompts` and update the corresponding tool with a `prompt` key in `mcp.config.ts`:
+
+```ts
+{
+  fooServer: {
+    prompt: readPrompt("my-prompt.md")
+  }
+}
+```

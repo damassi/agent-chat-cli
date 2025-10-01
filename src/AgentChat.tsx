@@ -65,7 +65,7 @@ export const AgentChat: React.FC = () => {
                           bold
                           color={entry.role === "user" ? "green" : "blue"}
                         >
-                          {entry.role === "user" ? "You" : "Artsy Agent"}:
+                          {entry.role === "user" ? "You" : "Agent"}:
                         </Text>
 
                         {entry.role === "user" ? (
