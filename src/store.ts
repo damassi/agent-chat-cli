@@ -1,4 +1,10 @@
-import { action, computed, createContextStore, type Action, type Computed } from "easy-peasy"
+import {
+  action,
+  computed,
+  createContextStore,
+  type Action,
+  type Computed,
+} from "easy-peasy"
 
 export interface Message {
   type: "message"
@@ -29,7 +35,7 @@ export interface StoreModel {
   isProcessing: boolean
   currentAssistantMessage: string
   currentToolUses: ToolUse[]
-  stats?: string
+  stats?: string | null
   shouldExit: boolean
 
   // Computed
@@ -45,7 +51,7 @@ export interface StoreModel {
   appendcurrentAssistantMessage: Action<StoreModel, string>
   setCurrentToolUses: Action<StoreModel, ToolUse[]>
   addToolUse: Action<StoreModel, ToolUse>
-  setStats: Action<StoreModel, string | undefined>
+  setStats: Action<StoreModel, string | null>
   setShouldExit: Action<StoreModel, boolean>
   clearcurrentAssistantMessage: Action<StoreModel>
   clearToolUses: Action<StoreModel>

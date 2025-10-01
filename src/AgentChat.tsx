@@ -7,6 +7,7 @@ import { Stats } from "./components/Stats"
 import { useAgent } from "./hooks/useAgent"
 import { AgentStore } from "./store"
 import { formatToolInput } from "./utils/formatToolInput"
+import { getToolInfo } from "./utils/getToolInfo"
 
 export const AgentChat: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
@@ -28,7 +29,7 @@ export const AgentChat: React.FC = () => {
       content: value,
     })
     actions.setIsProcessing(true)
-    actions.setStats(undefined)
+    actions.setStats(null)
 
     if (store.messageQueue.length > 0) {
       const item = store.messageQueue.shift()
@@ -78,12 +79,7 @@ export const AgentChat: React.FC = () => {
                   }
 
                   case entry.type === "tool_use": {
-                    const parts = entry.name.split("__")
-                    const serverName =
-                      parts.length >= 3 && parts[0] === "mcp" ? parts[1] : null
-                    const toolName = serverName
-                      ? parts.slice(2).join("__")
-                      : entry.name
+                    const { serverName, toolName } = getToolInfo(entry.name)
 
                     return (
                       <Box key={idx} flexDirection="column" marginBottom={1}>
