@@ -22,7 +22,11 @@ export const AgentChat: React.FC = () => {
 
     if (!value.trim()) return
 
-    actions.addChatHistoryEntry({ type: "message", role: "user", content: value })
+    actions.addChatHistoryEntry({
+      type: "message",
+      role: "user",
+      content: value,
+    })
     actions.setIsProcessing(true)
     actions.setStats(undefined)
 
@@ -49,16 +53,18 @@ export const AgentChat: React.FC = () => {
       <ChatHeader />
 
       <Box flexDirection="column">
-
         {store.chatHistory.map((entry, idx) => {
           return (
-            <>
+            <Box key={idx}>
               {(() => {
                 switch (true) {
                   case entry.type === "message": {
                     return (
                       <Box key={idx} flexDirection="column" marginBottom={1}>
-                        <Text bold color={entry.role === "user" ? "green" : "blue"}>
+                        <Text
+                          bold
+                          color={entry.role === "user" ? "green" : "blue"}
+                        >
                           {entry.role === "user" ? "You" : "Artsy Agent"}:
                         </Text>
 
@@ -70,41 +76,47 @@ export const AgentChat: React.FC = () => {
                       </Box>
                     )
                   }
+
                   case entry.type === "tool_use": {
                     const parts = entry.name.split("__")
-                    const serverName = parts.length >= 3 && parts[0] === "mcp" ? parts[1] : null
-                    const actualToolName = serverName ? parts.slice(2).join("__") : entry.name
+                    const serverName =
+                      parts.length >= 3 && parts[0] === "mcp" ? parts[1] : null
+                    const toolName = serverName
+                      ? parts.slice(2).join("__")
+                      : entry.name
 
                     return (
                       <Box key={idx} flexDirection="column" marginBottom={1}>
                         <Box>
                           {serverName ? (
                             <>
-                              <Text color="yellow">[server] </Text>
-                              <Text bold color="yellow">{serverName}</Text>
-                              <Text color="yellow">: {actualToolName}</Text>
+                              <Text bold color="yellow">
+                                [{serverName}]
+                              </Text>
+                              <Text color="yellow">: {toolName}</Text>
                             </>
                           ) : (
                             <Text color="yellow">[tool] {entry.name}</Text>
                           )}
                         </Box>
+
                         <Box marginLeft={2} flexDirection="column">
                           {formatToolInput(entry.input)
-                            .split('\n')
+                            .split("\n")
                             .map((line, lineIdx) => (
-                              <Text key={lineIdx} dimColor>{line}</Text>
+                              <Text key={lineIdx} dimColor>
+                                {line}
+                              </Text>
                             ))}
                         </Box>
                       </Box>
                     )
                   }
-
                 }
               })()}
-            </>
+            </Box>
           )
         })}
-
 
         {store.currentAssistantMessage && (
           <Box flexDirection="column" marginBottom={1}>
@@ -119,7 +131,14 @@ export const AgentChat: React.FC = () => {
         <Stats />
       </Box>
 
-      {!store.isProcessing && (
+      {store.isProcessing ? (
+        <Text dimColor>
+          <Text color="cyan">
+            <Spinner type="dots" />
+          </Text>
+          {" Agent is thinking..."}
+        </Text>
+      ) : (
         <Box>
           <Text bold color="green">
             You:{" "}
@@ -133,14 +152,7 @@ export const AgentChat: React.FC = () => {
         </Box>
       )}
 
-      {store.isProcessing && (
-        <Text dimColor>
-          <Text color="cyan">
-            <Spinner type="dots" />
-          </Text>
-          {" Agent is thinking..."}
-        </Text>
-      )}
+      <Box marginTop={1} />
     </Box>
   )
 }
