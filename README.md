@@ -2,7 +2,7 @@
 
 A bare-bones, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
 
-Additional MCP servers can be configured in [mcp.config.ts](src/mcp.config.ts).
+MCP servers can be configured in [agent-chat-cli.config.ts](agent-chat-cli.config.ts).
 
 https://github.com/user-attachments/assets/466c98c3-ce36-4916-b196-6650921facbd
 
@@ -34,14 +34,24 @@ You'll see a prompt where you can type your questions or requests.
 
 Type `exit` to quit.
 
-#### Updating MCP System Prompts
+### Configuration
 
-If you'd like to add specific instructions for each connected tool, add a markdown file to `src/prompts` and update the corresponding tool with a `prompt` key in `mcp.config.ts`:
+MCP servers and system prompts are configured in `agent-chat-cli.config.ts`.
+
+To add specific instructions for each MCP server, create a markdown file in `src/prompts` and reference it in the config:
 
 ```ts
-{
-  fooServer: {
-    prompt: readPrompt("my-prompt.md")
-  }
+import { getPrompt } from "./src/utils/getPrompt"
+
+const config = {
+  mcpServers: {
+    fooServer: {
+      command: "npx",
+      args: ["..."],
+      prompt: getPrompt("my-prompt.md"),
+    },
+  },
 }
+
+export default config
 ```

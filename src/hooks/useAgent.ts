@@ -1,14 +1,25 @@
 import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
-import { useEffect, useRef } from "react"
-import { mcpServers } from "../mcp.config"
+import { useEffect, useRef, useState } from "react"
 import { AgentStore } from "../store"
+import { loadConfig } from "../utils/loadConfig"
+
+type AgentChatConfig = Awaited<ReturnType<typeof loadConfig>>
 
 export function useAgent() {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
   const actions = AgentStore.useStoreActions((actions) => actions)
   const currentAssistantMessageRef = useRef("")
+  const [config, setConfig] = useState<AgentChatConfig | null>(null)
 
   useEffect(() => {
+    loadConfig().then(setConfig).catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    if (!config) return
+
+    const mcpServers = config.mcpServers
+
     async function runAgent() {
       // Build combined system prompt from MCP server prompts
       const mcpPrompts = Object.entries(mcpServers)
@@ -118,7 +129,7 @@ export function useAgent() {
     return () => {
       // Cleanup
     }
-  }, [messageQueue, actions])
+  }, [messageQueue, actions, config])
 }
 
 const generateMessages = async function* generateMessages(
