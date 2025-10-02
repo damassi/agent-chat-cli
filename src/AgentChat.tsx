@@ -8,6 +8,7 @@ import { useAgent } from "./hooks/useAgent"
 import { AgentStore } from "./store"
 import { formatToolInput } from "./utils/formatToolInput"
 import { getToolInfo } from "./utils/getToolInfo"
+import { BlinkCaret } from "./components/BlinkCaret"
 
 export const AgentChat: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
@@ -135,15 +136,13 @@ export const AgentChat: React.FC = () => {
       {store.isProcessing ? (
         <Text dimColor>
           <Text color="cyan">
-            <Spinner type="dots" />
+            <Spinner type="balloon" />
           </Text>
           {" Agent is thinking..."}
         </Text>
       ) : (
         <Box>
-          <Text bold color="green">
-            You:{" "}
-          </Text>
+          <BlinkCaret />
 
           <TextInput
             value={store.input}
