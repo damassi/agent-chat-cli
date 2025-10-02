@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
+    "baseUrl": "./src",
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "Preserve",

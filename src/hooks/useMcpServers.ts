@@ -1,4 +1,4 @@
-import { AgentStore } from "../store"
+import { AgentStore } from "store"
 
 const CONNECTION_TIMEOUT = 10000
 const MAX_RETRIES = 3

@@ -1,18 +1,10 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
-import { z } from "zod"
-import { loadConfig } from "./utils/loadConfig"
-import { createAgentQuery, messageTypes } from "./utils/runAgent"
-
-const mcpServer = new McpServer({
-  name: "agent-chat-cli",
-  version: "0.1.0",
-})
+import { loadConfig } from "utils/loadConfig"
+import { createAgentQuery, messageTypes } from "utils/runAgent"
 
 let sessionId: string | undefined
-let config: Awaited<ReturnType<typeof loadConfig>>
 
-const runQuery = async (prompt: string) => {
+export const runQuery = async (prompt: string) => {
+  const config = await loadConfig()
   const messageQueue: { resolve: (value: string) => void }[] = []
   const streamEnabled = config.stream ?? false
 
@@ -77,47 +69,8 @@ const runQuery = async (prompt: string) => {
       }
     }
   } catch (error) {
-    throw new Error(`Agent error: ${error}`)
+    throw new Error(`[agent-chat-cli] Error: ${error}`)
   }
 
   return fullResponse
 }
-
-mcpServer.registerTool(
-  "query_agent",
-  {
-    description:
-      "Query the Agent Chat CLI agent. The agent has access to all configured MCP servers and can use their tools.",
-    inputSchema: {
-      prompt: z.string().min(1).describe("The prompt to send to the agent"),
-    },
-  },
-  async ({ prompt }) => {
-    const result = await runQuery(prompt)
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: result,
-        },
-      ],
-    }
-  }
-)
-
-export const runServer = async () => {
-  try {
-    config = await loadConfig()
-
-    const transport = new StdioServerTransport()
-    await mcpServer.connect(transport)
-
-    console.log("\n[agent-chat-cli] MCP Server running on stdio\n")
-  } catch (error) {
-    console.error("[agent-chat-cli] Fatal error running server:", error)
-    process.exit(1)
-  }
-}
-
-runServer()

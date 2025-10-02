@@ -1,14 +1,14 @@
 import { Box, Text } from "ink"
 import Spinner from "ink-spinner"
 import TextInput from "ink-text-input"
-import { ChatHeader } from "./ChatHeader"
-import { Markdown } from "./Markdown"
-import { Stats } from "./Stats"
-import { useAgent } from "../hooks/useAgent"
-import { AgentStore } from "../store"
-import { formatToolInput } from "../utils/formatToolInput"
-import { getToolInfo } from "../utils/getToolInfo"
-import { BlinkCaret } from "./BlinkCaret"
+import { ChatHeader } from "components/ChatHeader"
+import { Markdown } from "components/Markdown"
+import { Stats } from "components/Stats"
+import { useAgent } from "hooks/useAgent"
+import { AgentStore } from "store"
+import { formatToolInput } from "utils/formatToolInput"
+import { getToolInfo } from "utils/getToolInfo"
+import { BlinkCaret } from "components/BlinkCaret"
 
 export const AgentChat: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
@@ -142,7 +142,7 @@ export const AgentChat: React.FC = () => {
         </Text>
       ) : (
         <Box>
-          <BlinkCaret />
+          <BlinkCaret enabled={store.mcpServers.length > 0} />
 
           <TextInput
             value={store.input}

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
-import { AgentStore } from "../store"
-import { useMcpServers } from "./useMcpServers"
-import { createAgentQuery, messageTypes } from "../utils/runAgent"
+import { AgentStore } from "store"
+import { useMcpServers } from "hooks/useMcpServers"
+import { createAgentQuery, messageTypes } from "utils/runAgent"
 
 export function useAgent() {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)

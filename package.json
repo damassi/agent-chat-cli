@@ -5,12 +5,15 @@
   "private": true,
   "scripts": {
     "start": "bun run src/index.tsx",
-    "server": "bun run src/mcpServer.ts",
+    "server": "bun run src/mcp/stdio.ts",
+    "server:http": "bun run src/mcp/http.ts",
     "type-check": "tsc --noEmit",
     "prepare": "husky"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/react": "^19.1.16",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.3",
@@ -22,9 +25,11 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.1",
     "@modelcontextprotocol/sdk": "^1.18.2",
+    "cors": "^2.8.5",
     "cosmiconfig": "^9.0.0",
     "cosmiconfig-typescript-loader": "^6.1.0",
     "easy-peasy": "^6.1.0",
+    "express": "^5.1.0",
     "ink": "^6.3.1",
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",

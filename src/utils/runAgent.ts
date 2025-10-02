@@ -1,6 +1,6 @@
 import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
-import type { AgentChatConfig } from "../store"
-import { buildSystemPrompt } from "../utils/getPrompt"
+import type { AgentChatConfig } from "store"
+import { buildSystemPrompt } from "utils/getPrompt"
 
 export const messageTypes = {
   ASSISTANT: "assistant",
