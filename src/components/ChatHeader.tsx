@@ -29,7 +29,7 @@ export const ChatHeader: React.FC = () => {
       ) : (
         <Text dimColor>
           <Text color="green">
-            <Spinner type="dots" />
+            <Spinner type="balloon" />
           </Text>
           {" Connecting to MCP servers..."}
         </Text>

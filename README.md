@@ -4,7 +4,7 @@ A bare-bones, terminal-based chat CLI built to explore the new [Claude Agent SDK
 
 MCP servers can be configured in [agent-chat-cli.config.ts](agent-chat-cli.config.ts).
 
-https://github.com/user-attachments/assets/b9e9f7f4-0906-415c-a786-ba0815ff3b46
+https://github.com/user-attachments/assets/00cfb9b6-ac65-4b95-8842-28ad0414ffd9
 
 ### Setup
 
