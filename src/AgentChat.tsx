@@ -60,17 +60,22 @@ export const AgentChat: React.FC = () => {
               {(() => {
                 switch (true) {
                   case entry.type === "message": {
+                    const isUser = entry.role === "user"
+                    const isSystem = entry.role === "system"
+
                     return (
                       <Box flexDirection="column" marginBottom={1}>
                         <Text
                           bold
-                          color={entry.role === "user" ? "green" : "blue"}
+                          color={
+                            isUser ? "green" : isSystem ? "yellow" : "blue"
+                          }
                         >
-                          {entry.role === "user" ? "You" : "Agent"}:
+                          {isUser ? "You" : isSystem ? "System" : "Agent"}:
                         </Text>
 
-                        {entry.role === "user" ? (
-                          <Text>{entry.content}</Text>
+                        {isUser || isSystem ? (
+                          <Text dimColor={isSystem}>{entry.content}</Text>
                         ) : (
                           <Markdown>{entry.content}</Markdown>
                         )}

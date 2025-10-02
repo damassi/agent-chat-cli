@@ -7,6 +7,10 @@ type McpServerConfigWithPrompt = McpServerConfig & {
 }
 
 interface AgentChatConfig {
+  stream?: boolean
+  connectionTimeout?: number
+  maxRetries?: number
+  retryDelay?: number
   mcpServers: Record<string, McpServerConfigWithPrompt>
 }
 

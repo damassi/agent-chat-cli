@@ -1,11 +1,18 @@
 import { render } from "ink"
 import { App } from "./App"
 import { validateEnv } from "./utils/validateEnv"
+import { AgentStore } from "./store"
 
-const main = async () => {
+const main = () => {
   validateEnv()
 
-  render(<App />)
+  console.clear()
+
+  render(
+    <AgentStore.Provider>
+      <App />
+    </AgentStore.Provider>
+  )
 }
 
 try {

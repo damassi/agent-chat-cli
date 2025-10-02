@@ -1,8 +1,8 @@
 import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
 import { useEffect, useRef } from "react"
 import { AgentStore } from "../store"
-import { loadConfig } from "../utils/loadConfig"
 import { buildSystemPrompt } from "../utils/getPrompt"
+import { useMcpServers } from "./useMcpServers"
 
 export function useAgent() {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
@@ -10,24 +10,11 @@ export function useAgent() {
   const config = AgentStore.useStoreState((state) => state.config)
   const actions = AgentStore.useStoreActions((actions) => actions)
   const currentAssistantMessageRef = useRef("")
+  const { initMcpServers } = useMcpServers()
 
   useEffect(() => {
-    const initConfig = async () => {
-      try {
-        const loadedConfig = await loadConfig()
-        actions.setConfig(loadedConfig)
-      } catch (error) {
-        console.error(error)
-      }
-    }
-
-    initConfig()
-  }, [actions])
-
-  useEffect(() => {
-    if (!config) return
-
     const mcpServers = config.mcpServers
+    const streamEnabled = config.stream ?? false
 
     async function runAgent() {
       const mcpPrompts = buildSystemPrompt(mcpServers)
@@ -41,6 +28,7 @@ export function useAgent() {
           model: "sonnet",
           permissionMode: "bypassPermissions",
           mcpServers,
+          includePartialMessages: streamEnabled,
           systemPrompt: mcpPrompts
             ? {
                 type: "preset",
@@ -51,15 +39,7 @@ export function useAgent() {
         },
       })
 
-      try {
-        const servers = await response.mcpServerStatus()
-        actions.setMcpServers(servers)
-      } catch (error) {
-        console.error(
-          "[agent-chat-cli] Failed to get MCP server status:",
-          error
-        )
-      }
+      await initMcpServers(response)
 
       try {
         for await (const message of response) {
@@ -70,11 +50,30 @@ export function useAgent() {
             continue
           }
 
+          // Streaming
+          if (message.type === "stream_event") {
+            if (streamEnabled) {
+              const event = message.event
+
+              if (event.type === "content_block_delta") {
+                if (event.delta.type === "text_delta") {
+                  actions.appendCurrentAssistantMessage(event.delta.text)
+                  currentAssistantMessageRef.current += event.delta.text
+                }
+              }
+            }
+
+            continue
+          }
+
           if (message.type === "assistant") {
             for (const content of message.message.content) {
+              // Streaming disabled. Append text directly
               if (content.type === "text") {
-                actions.appendcurrentAssistantMessage(content.text)
-                currentAssistantMessageRef.current += content.text
+                if (!streamEnabled) {
+                  actions.appendCurrentAssistantMessage(content.text)
+                  currentAssistantMessageRef.current += content.text
+                }
               } else if (content.type === "tool_use") {
                 if (currentAssistantMessageRef.current) {
                   // Before adding tool use, flush any accumulated assistant text

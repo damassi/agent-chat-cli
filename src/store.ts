@@ -24,19 +24,23 @@ export interface ToolUse {
   input: Record<string, unknown>
 }
 
-export type TimelineEntry = Message | ToolUse
+export type ChatHistoryEntry = Message | ToolUse
 
 type McpServerConfigWithPrompt = McpServerConfig & {
   prompt?: string
 }
 
 export interface AgentChatConfig {
+  stream?: boolean
+  connectionTimeout?: number
+  maxRetries?: number
+  retryDelay?: number
   mcpServers: Record<string, McpServerConfigWithPrompt>
 }
 
 export interface StoreModel {
-  chatHistory: TimelineEntry[]
-  config: AgentChatConfig | null
+  chatHistory: ChatHistoryEntry[]
+  config: AgentChatConfig
   currentAssistantMessage: string
   currentToolUses: ToolUse[]
   input: string
@@ -51,9 +55,9 @@ export interface StoreModel {
   isBooted: Computed<StoreModel, boolean>
 
   // Actions
-  addChatHistoryEntry: Action<StoreModel, TimelineEntry>
+  addChatHistoryEntry: Action<StoreModel, ChatHistoryEntry>
   addToolUse: Action<StoreModel, ToolUse>
-  appendcurrentAssistantMessage: Action<StoreModel, string>
+  appendCurrentAssistantMessage: Action<StoreModel, string>
   clearCurrentAssistantMessage: Action<StoreModel>
   clearToolUses: Action<StoreModel>
   setConfig: Action<StoreModel, AgentChatConfig>
@@ -78,10 +82,12 @@ export const AgentStore = createContextStore<StoreModel>({
   currentToolUses: [],
   stats: undefined,
   shouldExit: false,
-  config: null,
+  config: null as unknown as AgentChatConfig,
 
   // Computed
-  isBooted: computed((state) => !!state.sessionId),
+  isBooted: computed((state) => {
+    return !!state.config
+  }),
 
   // Actions
   addChatHistoryEntry: action((state, payload) => {
@@ -108,7 +114,7 @@ export const AgentStore = createContextStore<StoreModel>({
     state.currentAssistantMessage = payload
   }),
 
-  appendcurrentAssistantMessage: action((state, payload) => {
+  appendCurrentAssistantMessage: action((state, payload) => {
     state.currentAssistantMessage += payload
   }),
 

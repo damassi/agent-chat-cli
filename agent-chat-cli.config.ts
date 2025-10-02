@@ -1,18 +1,11 @@
-import type { McpServerConfig } from "@anthropic-ai/claude-agent-sdk"
+import type { AgentChatConfig } from "./src/store"
 import { getPrompt } from "./src/utils/getPrompt"
 
-interface AgentChatConfig {
-  mcpServers: Record<
-    string,
-    McpServerConfig & {
-      prompt?: string
-    }
-  >
-}
-
 const config: AgentChatConfig = {
+  stream: false,
   mcpServers: {
     artsymcp: {
+      prompt: getPrompt("artsy-mcp.md"),
       command: "npx",
       args: [
         "mcp-remote@0.1.29",
@@ -26,9 +19,9 @@ const config: AgentChatConfig = {
         X_ACCESS_TOKEN: process.env.ARTSY_MCP_X_ACCESS_TOKEN!,
         X_USER_ID: process.env.ARTSY_MCP_X_USER_ID!,
       },
-      prompt: getPrompt("artsy-mcp.md"),
     },
     github: {
+      prompt: getPrompt("github.md"),
       command: "npx",
       args: [
         "mcp-remote@0.1.29",
@@ -39,7 +32,6 @@ const config: AgentChatConfig = {
       env: {
         GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN!,
       },
-      prompt: getPrompt("github.md"),
     },
   },
 }

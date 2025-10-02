@@ -1,11 +1,15 @@
-import React from "react";
-import { AgentStore } from "./store";
-import { AgentChat } from "./AgentChat";
+import { AgentStore } from "./store"
+import { AgentChat } from "./AgentChat"
+import { useConfig } from "./hooks/useConfig"
 
-export function App() {
-  return (
-    <AgentStore.Provider>
-      <AgentChat />
-    </AgentStore.Provider>
-  );
+export const App = () => {
+  useConfig()
+
+  const isBooted = AgentStore.useStoreState((state) => state.isBooted)
+
+  if (!isBooted) {
+    return null
+  }
+
+  return <AgentChat />
 }
