@@ -1,5 +1,5 @@
 import { AgentStore } from "./store"
-import { AgentChat } from "./AgentChat"
+import { AgentChat } from "./components/AgentChat"
 import { useConfig } from "./hooks/useConfig"
 
 export const App = () => {

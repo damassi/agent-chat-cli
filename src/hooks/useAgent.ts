@@ -1,16 +1,7 @@
-import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
 import { useEffect, useRef } from "react"
 import { AgentStore } from "../store"
-import { buildSystemPrompt } from "../utils/getPrompt"
 import { useMcpServers } from "./useMcpServers"
-
-const messageTypes = {
-  ASSISTANT: "assistant",
-  INIT: "init",
-  RESULT: "result",
-  STREAM_EVENT: "stream_event",
-  SYSTEM: "system",
-} as const
+import { createAgentQuery, messageTypes } from "../utils/runAgent"
 
 export function useAgent() {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
@@ -21,27 +12,13 @@ export function useAgent() {
   const { initMcpServers } = useMcpServers()
 
   useEffect(() => {
-    const mcpServers = config.mcpServers
     const streamEnabled = config.stream ?? false
 
     async function runAgent() {
-      const mcpPrompts = buildSystemPrompt(mcpServers)
-
-      const response = query({
-        prompt: generateMessages(messageQueue, sessionId),
-        options: {
-          model: "sonnet",
-          permissionMode: "bypassPermissions",
-          mcpServers,
-          includePartialMessages: streamEnabled,
-          systemPrompt: mcpPrompts
-            ? {
-                type: "preset",
-                preset: "claude_code",
-                append: mcpPrompts,
-              }
-            : undefined,
-        },
+      const { response } = createAgentQuery({
+        messageQueue,
+        sessionId,
+        config,
       })
 
       await initMcpServers(response)
@@ -145,33 +122,5 @@ export function useAgent() {
     }
 
     runAgent()
-  }, [messageQueue, actions, config])
-}
-
-const generateMessages = async function* generateMessages(
-  messageQueue: { resolve: (value: string) => void }[],
-  sessionId?: string
-) {
-  while (true) {
-    const userMessage = await new Promise<string>((resolve) => {
-      messageQueue.push({ resolve })
-    })
-
-    if (userMessage.toLowerCase() === "exit") {
-      break
-    }
-
-    if (!userMessage.trim()) {
-      continue
-    }
-
-    yield {
-      type: "user" as const,
-      session_id: sessionId || "",
-      message: {
-        role: "user" as const,
-        content: userMessage,
-      },
-    } as SDKUserMessage
-  }
+  }, [])
 }
