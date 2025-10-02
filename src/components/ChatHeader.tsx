@@ -6,9 +6,7 @@ export const ChatHeader: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
 
   return (
-    <Box flexDirection="column" marginBottom={1}>
-      <Box marginTop={1} />
-
+    <Box flexDirection="column" marginBottom={1} paddingTop={1}>
       <Text bold color="cyan">
         @ Agent CLI
       </Text>
