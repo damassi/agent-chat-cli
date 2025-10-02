@@ -1,6 +1,11 @@
 # Agent Chat CLI
 
-A bare-bones, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
+A bare-bones, terminal-based agent app built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
+
+The app has two modes:
+
+- An interactive terminal app
+- Stand-alone MCP server. Expose the agent as a tool to other MCP clients.
 
 MCP servers can be configured in [agent-chat-cli.config.ts](agent-chat-cli.config.ts).
 
@@ -24,7 +29,9 @@ Then edit `.env` and fill in the required values.
 
 ### Usage
 
-Run the agent:
+#### Interactive Mode
+
+Run the agent in interactive terminal mode:
 
 ```bash
 bun start
@@ -33,6 +40,16 @@ bun start
 You'll see a prompt where you can type your questions or requests.
 
 Type `exit` to quit.
+
+#### MCP Server Mode
+
+Run as an MCP server:
+
+```bash
+bun run server
+```
+
+The server exposes a `query_agent` tool that other MCP clients can use to interact with the agent. The agent has access to all configured MCP servers and can use their tools.
 
 ### Configuration
 

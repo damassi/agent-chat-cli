@@ -2,7 +2,7 @@
 
 ### Project Overview
 
-**Agent Chat CLI** - A terminal-based chat interface for the Claude Agent SDK with MCP server support, built using React Ink for terminal UI rendering.
+**Agent Chat CLI** - A terminal-based chat interface for the Claude Agent SDK with MCP server support, built using React Ink for terminal UI rendering. Can also run as an MCP server itself, exposing the agent as a tool to other MCP clients.
 
 ### Tech Stack
 
@@ -39,12 +39,17 @@
 
 #### Agent Integration
 
-- [src/hooks/useAgent.ts](../src/hooks/useAgent.ts) - Core hook that:
-  - Loads configuration
+- [src/utils/runAgent.ts](../src/utils/runAgent.ts) - Shared agent logic:
+  - `createAgentQuery()` - Creates agent query with configuration
+  - `generateMessages()` - Async generator for message queue
+  - `messageTypes` - Constants for message type checking
+- [src/hooks/useAgent.ts](../src/hooks/useAgent.ts) - React hook that:
+  - Uses shared agent logic
   - Manages the agent SDK query loop
   - Handles streaming responses
   - Processes tool uses
   - Tracks session state
+  - Updates UI store
 
 #### Configuration
 
@@ -72,12 +77,29 @@
 
 Configurable streaming responses via `config.stream`.
 
-#### MCP Server Integration
+#### MCP Server Integration (As Client)
+
+The CLI can connect to external MCP servers as a client:
 
 - Multiple MCP servers can be configured
 - Per-server custom system prompts
 - Server status tracking
 - Tool use from any connected server
+- Configured via `mcpServers` in config file
+
+#### MCP Server Mode
+
+The CLI can also run as an MCP server itself (`bun run server`):
+
+- [src/mcpServer.ts](../src/mcpServer.ts) - MCP server implementation
+- Uses `McpServer` from `@modelcontextprotocol/sdk`
+- Connects via `StdioServerTransport`
+- Exposes a `query_agent` tool with Zod validation
+- Shares the same agent logic as the CLI app
+- Maintains session state across queries
+- Uses the same configuration as CLI mode
+- Tool input: `{ prompt: string }`
+- Tool output: Agent's text response
 
 #### Tool Use Tracking
 
@@ -100,6 +122,8 @@ Configurable streaming responses via `config.stream`.
 
 ### Data Flow
 
+#### CLI Mode
+
 1. User submits input via TextInput
 2. Input added to chat history and message queue
 3. `useAgent` hook processes queue via async generator
@@ -108,6 +132,18 @@ Configurable streaming responses via `config.stream`.
 6. Tool uses are tracked and displayed separately
 7. Final result includes stats (cost, duration, turns)
 8. UI updates reactively via easy-peasy store
+
+#### MCP Server Mode
+
+1. MCP client calls `query_agent` tool with prompt
+2. Zod validates input schema
+3. `runQuery()` creates a message queue
+4. `createAgentQuery()` initializes agent with shared logic
+5. Prompt is resolved into the message queue
+6. Agent processes via async generator
+7. Response messages are collected
+8. Session state persists for follow-up queries
+9. Final text response returned to MCP client
 
 ### Configuration System
 
