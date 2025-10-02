@@ -11,6 +11,7 @@ Default to using Bun instead of Node.js.
 
 ## Main Rules
 
+- **CRITICAL:** For questions about overall architecture, please see `/docs/architecture.md`. Read it.
 - Prefer `const foo = () => { ... }` over `function foo`
 - Prefer named exports vs default exports
 - Prefer try/catch over vanilla promises
