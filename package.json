@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "start": "bun run src/index.tsx",
+    "server": "bun run src/mcpServer.ts",
     "type-check": "tsc --noEmit",
     "prepare": "husky"
   },
@@ -20,6 +21,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.1",
+    "@modelcontextprotocol/sdk": "^1.18.2",
     "cosmiconfig": "^9.0.0",
     "cosmiconfig-typescript-loader": "^6.1.0",
     "easy-peasy": "^6.1.0",
