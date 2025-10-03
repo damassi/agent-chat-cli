@@ -14,10 +14,18 @@ export const ToolPermissionPrompt: React.FC = () => {
   const { serverName, toolName: shortToolName } = getToolInfo(toolName)
 
   const handleSubmit = (value: string) => {
-    if (store.messageQueue.length > 0) {
-      const item = store.messageQueue.shift()
+    // Default to "y" if Enter pressed with no input
+    const response = value.trim() || "y"
+
+    // Resolve ALL pending tool permission requests with the same response
+    // This handles the case where multiple tools are called in parallel
+    while (store.messageQueue.length > 0 && store.pendingToolPermission) {
+      const item = store.messageQueue[0]
       if (item) {
-        item.resolve(value)
+        item.resolve(response)
+        store.messageQueue.shift()
+      } else {
+        break
       }
     }
 
@@ -25,12 +33,8 @@ export const ToolPermissionPrompt: React.FC = () => {
     actions.setInput("")
   }
 
-  useInput((input, key) => {
-    if (key.return) {
-      // Enter = yes/allow
-      handleSubmit("y")
-    } else if (key.escape) {
-      // ESC = no/deny
+  useInput((_input, key) => {
+    if (key.escape) {
       handleSubmit("n")
     }
   })
