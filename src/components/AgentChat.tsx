@@ -1,4 +1,4 @@
-import { Box, Text } from "ink"
+import { Box, Text, useInput } from "ink"
 import Spinner from "ink-spinner"
 import TextInput from "ink-text-input"
 import { ChatHeader } from "components/ChatHeader"
@@ -22,6 +22,12 @@ export const AgentChat: React.FC = () => {
   } else {
     useAgent()
   }
+
+  useInput((input, key) => {
+    if (key.escape && store.isProcessing) {
+      actions.setIsProcessing(false)
+    }
+  })
 
   const handleSubmit = (value: string) => {
     if (value.toLowerCase() === "exit") {
