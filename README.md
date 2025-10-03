@@ -41,6 +41,14 @@ cp .env.example .env
 
 Then edit `.env` and fill in the required values.
 
+3. Update `agent-chat-cli.config.ts` with MCP data-sources. System prompts for data-sources live in `src/prompts`.
+
+OAuth support works out of the box via `mcp-remote`: 
+
+<img width="336" height="191" alt="Screenshot 2025-10-03 at 11 57 58 AM" src="https://github.com/user-attachments/assets/1f138a05-7a05-4629-ac83-08a2a34519f2" />
+
+See the config above for an example. 
+
 ### Usage
 
 #### Interactive Agent Mode
