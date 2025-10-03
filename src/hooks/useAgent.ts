@@ -19,6 +19,9 @@ export function useAgent() {
         messageQueue,
         sessionId,
         config,
+        onToolPermissionRequest: (toolName, input) => {
+          actions.setPendingToolPermission({ toolName, input })
+        },
       })
 
       await initMcpServers(response)

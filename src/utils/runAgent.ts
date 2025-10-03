@@ -42,10 +42,11 @@ export interface CreateAgentQueryOptions {
   messageQueue: { resolve: (value: string) => void }[]
   sessionId?: string
   config: AgentChatConfig
+  onToolPermissionRequest?: (toolName: string, input: any) => void
 }
 
 export const createAgentQuery = (options: CreateAgentQueryOptions) => {
-  const { messageQueue, sessionId, config } = options
+  const { messageQueue, sessionId, config, onToolPermissionRequest } = options
   const mcpPrompts = buildSystemPrompt(config.mcpServers)
   const streamEnabled = config.stream ?? false
 
@@ -53,7 +54,7 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
     prompt: generateMessages(messageQueue, sessionId),
     options: {
       model: "sonnet",
-      permissionMode: "bypassPermissions",
+      permissionMode: "default",
       mcpServers: config.mcpServers,
       includePartialMessages: streamEnabled,
       systemPrompt: mcpPrompts
@@ -61,6 +62,45 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
             type: "preset",
             preset: "claude_code",
             append: mcpPrompts,
+          }
+        : undefined,
+      canUseTool: onToolPermissionRequest
+        ? async (toolName: string, input: any) => {
+            // Notify UI about the permission request
+            onToolPermissionRequest(toolName, input)
+
+            // Wait for user decision via messageQueue
+            const userResponse = await new Promise<string>((resolve) => {
+              messageQueue.push({ resolve })
+            })
+
+            const response = userResponse.toLowerCase().trim()
+
+            // Enter pressed (empty) or explicit "y"/"yes"/"allow"
+            if (!response || ["y", "yes", "allow"].includes(response)) {
+              return { behavior: "allow" as const, updatedInput: input }
+            }
+
+            // ESC or explicit "n"/"no"/"deny"
+            if (["n", "no", "deny"].includes(response)) {
+              return {
+                behavior: "deny" as const,
+                message: "User denied permission",
+                interrupt: true,
+              }
+            }
+
+            // Any other input = modified input
+            try {
+              const updatedInput = JSON.parse(response)
+              return { behavior: "allow" as const, updatedInput }
+            } catch {
+              // If not valid JSON, treat as text modification
+              return {
+                behavior: "allow" as const,
+                updatedInput: { value: response },
+              }
+            }
           }
         : undefined,
     },

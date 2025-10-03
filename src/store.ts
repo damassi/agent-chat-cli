@@ -38,6 +38,11 @@ export interface AgentChatConfig {
   mcpServers: Record<string, McpServerConfigWithPrompt>
 }
 
+export interface PendingToolPermission {
+  toolName: string
+  input: any
+}
+
 export interface StoreModel {
   chatHistory: ChatHistoryEntry[]
   config: AgentChatConfig
@@ -47,6 +52,7 @@ export interface StoreModel {
   isProcessing: boolean
   mcpServers: McpServerStatus[]
   messageQueue: { resolve: (value: string) => void }[]
+  pendingToolPermission?: PendingToolPermission
   sessionId?: string
   stats?: string | null
 
@@ -59,6 +65,10 @@ export interface StoreModel {
   appendCurrentAssistantMessage: Action<StoreModel, string>
   clearCurrentAssistantMessage: Action<StoreModel>
   clearToolUses: Action<StoreModel>
+  setPendingToolPermission: Action<
+    StoreModel,
+    PendingToolPermission | undefined
+  >
   setConfig: Action<StoreModel, AgentChatConfig>
   setcurrentAssistantMessage: Action<StoreModel, string>
   setCurrentToolUses: Action<StoreModel, ToolUse[]>
@@ -78,6 +88,7 @@ export const AgentStore = createContextStore<StoreModel>({
   isProcessing: false,
   currentAssistantMessage: "",
   currentToolUses: [],
+  pendingToolPermission: undefined,
   stats: undefined,
   config: null as unknown as AgentChatConfig,
 
@@ -137,5 +148,9 @@ export const AgentStore = createContextStore<StoreModel>({
 
   setConfig: action((state, payload) => {
     state.config = payload
+  }),
+
+  setPendingToolPermission: action((state, payload) => {
+    state.pendingToolPermission = payload
   }),
 })

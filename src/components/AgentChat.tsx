@@ -4,6 +4,7 @@ import TextInput from "ink-text-input"
 import { ChatHeader } from "components/ChatHeader"
 import { Markdown } from "components/Markdown"
 import { Stats } from "components/Stats"
+import { ToolPermissionPrompt } from "components/ToolPermissionPrompt"
 import { useAgent } from "hooks/useAgent"
 import { useMcpClient } from "hooks/useMcpClient"
 import { AgentStore } from "store"
@@ -138,24 +139,38 @@ export const AgentChat: React.FC = () => {
         <Stats />
       </Box>
 
-      {store.isProcessing ? (
-        <Text dimColor>
-          <Text color="cyan">
-            <Spinner type="balloon" />
-          </Text>
-          {" Agent is thinking..."}
-        </Text>
-      ) : (
-        <Box>
-          <BlinkCaret enabled={store.mcpServers.length > 0} />
+      {(() => {
+        switch (true) {
+          case !!store.pendingToolPermission: {
+            return <ToolPermissionPrompt />
+          }
 
-          <TextInput
-            value={store.input}
-            onChange={actions.setInput}
-            onSubmit={handleSubmit}
-          />
-        </Box>
-      )}
+          case store.isProcessing: {
+            return (
+              <Text dimColor>
+                <Text color="cyan">
+                  <Spinner type="balloon" />
+                </Text>
+                {" Agent is thinking..."}
+              </Text>
+            )
+          }
+
+          default: {
+            return (
+              <Box>
+                <BlinkCaret enabled={store.mcpServers.length > 0} />
+
+                <TextInput
+                  value={store.input}
+                  onChange={actions.setInput}
+                  onSubmit={handleSubmit}
+                />
+              </Box>
+            )
+          }
+        }
+      })()}
 
       <Box marginTop={1} />
     </Box>
