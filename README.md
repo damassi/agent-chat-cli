@@ -1,6 +1,6 @@
 # Agent Chat CLI
 
-A bare-bones, terminal-based agent app built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
+A bare-bones, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
 
 The app has three modes:
 
@@ -14,13 +14,13 @@ The MCP _client_ is configured in [mcp-client.config.ts](mcp-client.config.ts).
 
 https://github.com/user-attachments/assets/00cfb9b6-ac65-4b95-8842-28ad0414ffd9
 
-### Overview
+### Why?
 
 This addresses a gap I’ve noticed in the ecosystem, where spinning up conversational LLM interfaces often comes with a lot of overhead. For example:
 
 - One shouldn’t need to use VS Code, Claude, or Claude Code to interact with MCP servers, with all their abundance of features.
 - How does one fine-tune behavior without expanding already long CLAUDE.md scripts (and similar configuration files)?
-- What if the MCP server you’re interacting with is already an agent connected to an LLM? In that case, you incur a double tax - both in terms of latency and token expense - where responses are computed on the server and then re-computed by the client LLM.
+- What if the MCP server you’re interacting with is already an agent connected to an LLM? In that case, you incur a double tax - both in terms of latency and token expense - where responses are computed on the server and then re-computed by the client LLM. [MCP Sampling](https://modelcontextprotocol.io/specification/2025-06-18/client/sampling) is not yet widely supported.
 - It’s hard to find lightweight, terminal-based chat UIs, and even harder to find terminal-based MCP _clients_, disconnected from an LLM.
 
 This project aims to simplify things. It can run as an agent with simple UX, connected to an LLM, or as a stand-alone MCP pass-through client, sharing the same UX architecture, which communicate with an external MCP endpoint or stdio server to avoid double spends.
@@ -43,11 +43,11 @@ Then edit `.env` and fill in the required values.
 
 3. Update `agent-chat-cli.config.ts` with MCP data-sources. System prompts for data-sources live in `src/prompts`.
 
-OAuth support works out of the box via `mcp-remote`: 
+OAuth support works out of the box via `mcp-remote`:
 
 <img width="336" height="191" alt="Screenshot 2025-10-03 at 11 57 58 AM" src="https://github.com/user-attachments/assets/1f138a05-7a05-4629-ac83-08a2a34519f2" />
 
-See the config above for an example. 
+See the config above for an example.
 
 ### Usage
 
