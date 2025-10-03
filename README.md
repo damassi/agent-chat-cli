@@ -43,13 +43,14 @@ Type `exit` to quit.
 
 #### MCP Server Mode
 
-Run as an MCP server:
+Run as an MCP server, using one of two modes:
 
 ```bash
-bun run server
+bun run server # stdio
+bun run server:http
 ```
 
-The server exposes a `query_agent` tool that other MCP clients can use to interact with the agent. The agent has access to all configured MCP servers and can use their tools.
+The server exposes an `ask_agent` tool that other MCP clients can use to interact with the agent. The agent has access to all configured MCP servers and can use their tools.
 
 ### Configuration
 
