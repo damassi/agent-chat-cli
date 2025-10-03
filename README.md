@@ -14,6 +14,17 @@ The MCP _client_ is configured in [mcp-client.config.ts](mcp-client.config.ts).
 
 https://github.com/user-attachments/assets/00cfb9b6-ac65-4b95-8842-28ad0414ffd9
 
+### Overview
+
+This addresses a gap I’ve noticed in the ecosystem, where spinning up conversational LLM interfaces often comes with a lot of overhead. For example:
+
+- One shouldn’t need to use VS Code, Claude, or Claude Code to interact with MCP servers, with all their abundance of features.
+- How does one fine-tune behavior without expanding already long CLAUDE.md scripts (and similar configuration files)?
+- What if the MCP server you’re interacting with is already an agent connected to an LLM? In that case, you incur a double tax - both in terms of latency and token expense - where responses are computed on the server and then re-computed by the client LLM.
+- It’s hard to find lightweight, terminal-based chat UIs, and even harder to find terminal-based MCP _clients_, disconnected from an LLM.
+
+This project aims to simplify things. It can run as an agent with simple UX, connected to an LLM, or as a stand-alone MCP pass-through client, sharing the same UX architecture, which communicate with an external MCP endpoint or stdio server to avoid double spends.
+
 ### Setup
 
 1. Install dependencies:
@@ -71,7 +82,7 @@ The server exposes an `ask_agent` tool that other MCP clients can use to interac
 
 MCP servers and system prompts are configured in `agent-chat-cli.config.ts`.
 
-To add specific instructions for each MCP server, create a markdown file in `src/prompts` and reference it in the config:
+To add specific instructions for each MCP server, create a markdown file in `src/prompts` and reference it in `agent-chat-cli.config.ts`:
 
 ```ts
 const config = {
@@ -83,6 +94,4 @@ const config = {
     },
   },
 }
-
-export default config
 ```
