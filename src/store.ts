@@ -1,4 +1,7 @@
-import type { McpServerConfig } from "@anthropic-ai/claude-agent-sdk"
+import type {
+  McpServerConfig,
+  PermissionMode,
+} from "@anthropic-ai/claude-agent-sdk"
 import {
   action,
   computed,
@@ -31,11 +34,12 @@ type McpServerConfigWithPrompt = McpServerConfig & {
 }
 
 export interface AgentChatConfig {
-  stream?: boolean
   connectionTimeout?: number
   maxRetries?: number
-  retryDelay?: number
   mcpServers: Record<string, McpServerConfigWithPrompt>
+  permissionMode?: PermissionMode
+  retryDelay?: number
+  stream?: boolean
 }
 
 export interface PendingToolPermission {

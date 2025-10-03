@@ -55,7 +55,7 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
     prompt: generateMessages(messageQueue, sessionId),
     options: {
       model: "sonnet",
-      permissionMode: "default",
+      permissionMode: config.permissionMode || "default",
       mcpServers: config.mcpServers,
       includePartialMessages: streamEnabled,
       systemPrompt: mcpPrompts

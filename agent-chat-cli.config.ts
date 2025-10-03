@@ -3,6 +3,7 @@ import { getPrompt } from "./src/utils/getPrompt"
 
 const config: AgentChatConfig = {
   stream: false,
+  permissionMode: "default",
   mcpServers: {
     github: {
       prompt: getPrompt("github.md"),
