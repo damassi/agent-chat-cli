@@ -1,7 +1,6 @@
 import { Box, Text, useInput } from "ink"
 import TextInput from "ink-text-input"
 import { AgentStore } from "store"
-import { formatToolInput } from "utils/formatToolInput"
 import { getToolInfo } from "utils/getToolInfo"
 
 export const ToolPermissionPrompt: React.FC = () => {
@@ -10,7 +9,7 @@ export const ToolPermissionPrompt: React.FC = () => {
 
   if (!store.pendingToolPermission) return null
 
-  const { toolName, input } = store.pendingToolPermission
+  const { toolName } = store.pendingToolPermission
   const { serverName, toolName: shortToolName } = getToolInfo(toolName)
 
   const handleSubmit = (value: string) => {
@@ -56,19 +55,6 @@ export const ToolPermissionPrompt: React.FC = () => {
           ) : (
             <Text>{toolName}</Text>
           )}
-        </Box>
-
-        <Box flexDirection="column" marginTop={1}>
-          <Text bold>Input:</Text>
-          <Box marginLeft={2} flexDirection="column">
-            {formatToolInput(input)
-              .split("\n")
-              .map((line, idx) => (
-                <Text key={idx} dimColor>
-                  {line}
-                </Text>
-              ))}
-          </Box>
         </Box>
 
         <Box marginTop={1}>
