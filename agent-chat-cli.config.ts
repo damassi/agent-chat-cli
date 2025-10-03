@@ -33,6 +33,11 @@ const config: AgentChatConfig = {
         GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN!,
       },
     },
+    notion: {
+      prompt: getPrompt("notion.md"),
+      command: "npx",
+      args: ["mcp-remote@0.1.29", "https://mcp.notion.com/mcp"],
+    },
   },
 }
 
