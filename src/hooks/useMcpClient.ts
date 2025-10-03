@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
@@ -62,7 +62,7 @@ export const useMcpClient = () => {
           }
         )
 
-        let transport: StdioClientTransport | StreamableHTTPClientTransport =
+        const transport: StdioClientTransport | StreamableHTTPClientTransport =
           (() => {
             switch (true) {
               case config.transport === "stdio": {
@@ -88,14 +88,11 @@ export const useMcpClient = () => {
 
         await client.connect(transport)
         await client.setLoggingLevel("debug")
-
-        // Check to see what tools are available and update status
         await client.callTool({
           name: "get_agent_status",
           arguments: {},
         })
 
-        // Wait for messages from the queue
         while (true) {
           const userMessage = await new Promise<string>((resolve) => {
             messageQueue.push({ resolve })
