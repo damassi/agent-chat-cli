@@ -2,7 +2,7 @@
 
 ### Project Overview
 
-**Agent Chat CLI** - A terminal-based chat interface for the Claude Agent SDK with MCP server support, built using React Ink for terminal UI rendering. Can also run as an MCP server itself, exposing the agent as a tool to other MCP clients.
+**Agent Chat CLI** - A terminal-based chat interface for the Claude Agent SDK with MCP support, built using React Ink for terminal UI rendering. Can run in three modes: interactive agent mode, MCP server mode (exposing the agent as a tool), or MCP client mode (connecting to an MCP server).
 
 ### Tech Stack
 
@@ -43,18 +43,25 @@
   - `createAgentQuery()` - Creates agent query with configuration
   - `generateMessages()` - Async generator for message queue
   - `messageTypes` - Constants for message type checking
-- [src/hooks/useAgent.ts](../src/hooks/useAgent.ts) - React hook that:
+- [src/hooks/useAgent.ts](../src/hooks/useAgent.ts) - React hook for interactive agent mode:
   - Uses shared agent logic
   - Manages the agent SDK query loop
   - Handles streaming responses
   - Processes tool uses
   - Tracks session state
   - Updates UI store
+- [src/hooks/useMcpClient.ts](../src/hooks/useMcpClient.ts) - React hook for MCP client mode:
+  - Connects to an MCP server via stdio/HTTP/SSE
+  - Calls `ask_agent` tool on the server
+  - Displays tool uses via logging notifications
+  - Updates UI store with responses
+  - Configured via `mcp-client.config.ts`
 
 #### Configuration
 
-- [agent-chat-cli.config.ts](../agent-chat-cli.config.ts) - Main configuration file
-- [src/utils/loadConfig.ts](../src/utils/loadConfig.ts) - Configuration loader using cosmiconfig
+- [agent-chat-cli.config.ts](../agent-chat-cli.config.ts) - Agent mode configuration
+- [mcp-client.config.ts](../mcp-client.config.ts) - MCP client mode configuration
+- [src/utils/loadConfig.ts](../src/utils/loadConfig.ts) - Configuration loader using cosmiconfig (agent mode only)
 - [src/prompts/](../src/prompts/) - Per-server system prompts
 
 #### Utilities
@@ -161,7 +168,7 @@ The CLI can also run as an MCP server itself, exposing the agent as a tool to ot
 
 ### Data Flow
 
-#### CLI Mode
+#### Interactive Agent Mode
 
 1. User submits input via TextInput
 2. Input added to chat history and message queue
@@ -172,9 +179,21 @@ The CLI can also run as an MCP server itself, exposing the agent as a tool to ot
 7. Final result includes stats (cost, duration, turns)
 8. UI updates reactively via easy-peasy store
 
+#### MCP Client Mode
+
+1. User submits input via TextInput
+2. Input added to chat history and message queue
+3. `useMcpClient` hook sends to MCP server's `ask_agent` tool
+4. Server emits logging notifications for tool uses
+5. Client receives and displays tool uses in real-time
+6. Final response text added to chat history
+7. UI updates reactively via easy-peasy store
+
 #### MCP Server Mode
 
 ### Configuration System
+
+#### Agent Mode Config
 
 Uses `cosmiconfig` for flexible configuration loading:
 
@@ -182,8 +201,6 @@ Uses `cosmiconfig` for flexible configuration loading:
 - Multiple search locations
 - Type-safe configuration interface
 - Environment variable injection for MCP servers
-
-### Config Structure
 
 ```typescript
 {
@@ -196,5 +213,18 @@ Uses `cosmiconfig` for flexible configuration loading:
       prompt?: string  // Optional system prompt
     }
   }
+}
+```
+
+#### MCP Client Mode Config
+
+Direct import of `mcp-client.config.ts`:
+
+```typescript
+{
+  transport: "stdio" | "http" | "sse"
+  command?: string  // For stdio
+  args?: string[]   // For stdio
+  url?: string      // For http/sse
 }
 ```

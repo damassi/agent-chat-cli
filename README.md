@@ -2,12 +2,15 @@
 
 A bare-bones, terminal-based agent app built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
 
-The app has two modes:
+The app has three modes:
 
-- An interactive terminal app
-- Stand-alone MCP server. Expose the agent as a tool to other MCP clients.
+- Interactive terminal app which communicates with LLM directly.
+- Interactive terminal app _as a stand-alone MCP client_ with no direct LLM communication, serving as a frontend to the agent or other MCP servers.
+- Stand-alone MCP server which clients can connect to, without TUI.
 
-MCP servers can be configured in [agent-chat-cli.config.ts](agent-chat-cli.config.ts).
+The agent, including MCP server setup, is configured in [agent-chat-cli.config.ts](agent-chat-cli.config.ts).
+
+The MCP _client_ is configured in [mcp-client.config.ts](mcp-client.config.ts).
 
 https://github.com/user-attachments/assets/00cfb9b6-ac65-4b95-8842-28ad0414ffd9
 
@@ -29,7 +32,7 @@ Then edit `.env` and fill in the required values.
 
 ### Usage
 
-#### Interactive Mode
+#### Interactive Agent Mode
 
 Run the agent in interactive terminal mode:
 
@@ -41,12 +44,24 @@ You'll see a prompt where you can type your questions or requests.
 
 Type `exit` to quit.
 
-#### MCP Server Mode
+#### Interactive MCP Client
 
-Run as an MCP server, using one of two modes:
+To run as an MCP client (connecting to an MCP server):
 
 ```bash
-bun run server # stdio
+bun start:client
+```
+
+By default it will launch the MCP stdio server in the background (ie, `bun server`).
+
+Configure the MCP server connection in `mcp-client.config.ts`. HTTP is also supported.
+
+#### MCP Server Mode
+
+Run as a stand-alone MCP server, using one of two modes:
+
+```bash
+bun run server
 bun run server:http
 ```
 

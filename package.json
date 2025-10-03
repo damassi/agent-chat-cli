@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "start": "bun run src/index.tsx",
+    "start:client": "bun run src/index.tsx --client",
     "server": "bun run src/mcp/stdio.ts",
     "server:http": "bun run src/mcp/http.ts",
     "type-check": "tsc --noEmit",
