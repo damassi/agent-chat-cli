@@ -61,8 +61,8 @@ Configure the MCP server connection in `mcp-client.config.ts`. HTTP is also supp
 Run as a stand-alone MCP server, using one of two modes:
 
 ```bash
-bun run server
-bun run server:http
+bun server
+bun server:http
 ```
 
 The server exposes an `ask_agent` tool that other MCP clients can use to interact with the agent. The agent has access to all configured MCP servers and can use their tools.
