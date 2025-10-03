@@ -1,6 +1,7 @@
 import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
 import type { AgentChatConfig } from "store"
 import { buildSystemPrompt } from "utils/getPrompt"
+import { createCanUseTool } from "utils/canUseTool"
 
 export const messageTypes = {
   ASSISTANT: "assistant",
@@ -42,10 +43,11 @@ export interface CreateAgentQueryOptions {
   messageQueue: { resolve: (value: string) => void }[]
   sessionId?: string
   config: AgentChatConfig
+  onToolPermissionRequest?: (toolName: string, input: any) => void
 }
 
 export const createAgentQuery = (options: CreateAgentQueryOptions) => {
-  const { messageQueue, sessionId, config } = options
+  const { messageQueue, sessionId, config, onToolPermissionRequest } = options
   const mcpPrompts = buildSystemPrompt(config.mcpServers)
   const streamEnabled = config.stream ?? false
 
@@ -53,7 +55,7 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
     prompt: generateMessages(messageQueue, sessionId),
     options: {
       model: "sonnet",
-      permissionMode: "bypassPermissions",
+      permissionMode: "default",
       mcpServers: config.mcpServers,
       includePartialMessages: streamEnabled,
       systemPrompt: mcpPrompts
@@ -62,6 +64,12 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
             preset: "claude_code",
             append: mcpPrompts,
           }
+        : undefined,
+      canUseTool: onToolPermissionRequest
+        ? createCanUseTool({
+            messageQueue,
+            onToolPermissionRequest,
+          })
         : undefined,
     },
   })
