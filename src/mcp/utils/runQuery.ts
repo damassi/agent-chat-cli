@@ -1,9 +1,15 @@
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { loadConfig } from "utils/loadConfig"
 import { createAgentQuery, messageTypes } from "utils/runAgent"
 
 let sessionId: string | undefined
 
-export const runQuery = async (prompt: string) => {
+interface RunQueryOptions {
+  prompt: string
+  mcpServer?: McpServer
+}
+
+export const runQuery = async ({ prompt, mcpServer }: RunQueryOptions) => {
   const config = await loadConfig()
   const messageQueue: { resolve: (value: string) => void }[] = []
   const streamEnabled = config.stream ?? false
@@ -54,6 +60,18 @@ export const runQuery = async (prompt: string) => {
             if (content.type === "text") {
               if (!streamEnabled) {
                 currentAssistantMessage += content.text
+              }
+            } else if (content.type === "tool_use") {
+              // Emit tool use notification if mcpServer is available
+              if (mcpServer) {
+                await mcpServer.sendLoggingMessage({
+                  level: "info",
+                  data: JSON.stringify({
+                    type: "tool_use",
+                    name: content.name,
+                    input: content.input,
+                  }),
+                })
               }
             }
           }

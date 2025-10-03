@@ -1,12 +1,20 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { runQuery } from "mcp/utils/runQuery"
+import { getAgentStatus } from "mcp/utils/getAgentStatus"
 import { z } from "zod"
 
 export const getMcpServer = () => {
-  const mcpServer = new McpServer({
-    name: "agent-chat-cli",
-    version: "0.1.0",
-  })
+  const mcpServer = new McpServer(
+    {
+      name: "agent-chat-cli",
+      version: "0.1.0",
+    },
+    {
+      capabilities: {
+        logging: {},
+      },
+    }
+  )
 
   mcpServer.registerTool(
     "ask_agent",
@@ -18,13 +26,37 @@ export const getMcpServer = () => {
       },
     },
     async ({ query }) => {
-      const result = await runQuery(query)
+      const result = await runQuery({
+        prompt: query,
+        mcpServer,
+      })
 
       return {
         content: [
           {
             type: "text",
             text: result,
+          },
+        ],
+      }
+    }
+  )
+
+  mcpServer.registerTool(
+    "get_agent_status",
+    {
+      description:
+        "Get the status of the agent including which MCP servers it has access to. Call this on initialization to see available servers.",
+      inputSchema: {},
+    },
+    async () => {
+      const status = await getAgentStatus(mcpServer)
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(status, null, 2),
           },
         ],
       }

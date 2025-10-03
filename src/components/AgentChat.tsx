@@ -5,6 +5,7 @@ import { ChatHeader } from "components/ChatHeader"
 import { Markdown } from "components/Markdown"
 import { Stats } from "components/Stats"
 import { useAgent } from "hooks/useAgent"
+import { useMcpClient } from "hooks/useMcpClient"
 import { AgentStore } from "store"
 import { formatToolInput } from "utils/formatToolInput"
 import { getToolInfo } from "utils/getToolInfo"
@@ -14,11 +15,16 @@ export const AgentChat: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
   const actions = AgentStore.useStoreActions((actions) => actions)
 
-  useAgent()
+  const isClient = process.argv.includes("--client")
+
+  if (isClient) {
+    useMcpClient()
+  } else {
+    useAgent()
+  }
 
   const handleSubmit = (value: string) => {
     if (value.toLowerCase() === "exit") {
-      actions.setShouldExit(true)
       process.exit(0)
     }
 
@@ -34,6 +40,7 @@ export const AgentChat: React.FC = () => {
 
     if (store.messageQueue.length > 0) {
       const item = store.messageQueue.shift()
+
       if (item) {
         item.resolve(value)
       }
@@ -42,16 +49,8 @@ export const AgentChat: React.FC = () => {
     actions.setInput("")
   }
 
-  if (store.shouldExit) {
-    return (
-      <Box flexDirection="column">
-        <Text>👋 Goodbye!</Text>
-      </Box>
-    )
-  }
-
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" paddingLeft={1}>
       <ChatHeader />
 
       <Box flexDirection="column">

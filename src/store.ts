@@ -48,7 +48,6 @@ export interface StoreModel {
   mcpServers: McpServerStatus[]
   messageQueue: { resolve: (value: string) => void }[]
   sessionId?: string
-  shouldExit: boolean
   stats?: string | null
 
   // Computed
@@ -67,7 +66,6 @@ export interface StoreModel {
   setIsProcessing: Action<StoreModel, boolean>
   setMcpServers: Action<StoreModel, McpServerStatus[]>
   setSessionId: Action<StoreModel, string>
-  setShouldExit: Action<StoreModel, boolean>
   setStats: Action<StoreModel, string | null>
 }
 
@@ -81,7 +79,6 @@ export const AgentStore = createContextStore<StoreModel>({
   currentAssistantMessage: "",
   currentToolUses: [],
   stats: undefined,
-  shouldExit: false,
   config: null as unknown as AgentChatConfig,
 
   // Computed
@@ -128,10 +125,6 @@ export const AgentStore = createContextStore<StoreModel>({
 
   setStats: action((state, payload) => {
     state.stats = payload
-  }),
-
-  setShouldExit: action((state, payload) => {
-    state.shouldExit = payload
   }),
 
   clearCurrentAssistantMessage: action((state) => {
