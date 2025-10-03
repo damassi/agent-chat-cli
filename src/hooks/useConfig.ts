@@ -1,6 +1,6 @@
 import { useEffect } from "react"
-import { AgentStore } from "../store"
-import { loadConfig } from "../utils/loadConfig"
+import { AgentStore } from "store"
+import { loadConfig } from "utils/loadConfig"
 
 export const useConfig = () => {
   const config = AgentStore.useStoreState((state) => state.config)

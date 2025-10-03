@@ -1,23 +1,11 @@
 import { Box, Text } from "ink"
-import { AgentStore } from "../store"
-import { formatToolInput } from "../utils/formatToolInput"
-
-const renderToolInput = (obj: Record<string, unknown>) => {
-  // Format the input (detects GraphQL queries and formats appropriately)
-  const formattedString = formatToolInput(obj)
-
-  // Split on actual newline characters and render each line
-  return (
-    <>
-      {formattedString.split('\n').map((line, idx) => (
-        <Text key={idx} dimColor>{line}</Text>
-      ))}
-    </>
-  )
-}
+import { AgentStore } from "store"
+import { formatToolInput } from "utils/formatToolInput"
 
 export const ToolUses: React.FC = () => {
-  const currentToolUses = AgentStore.useStoreState((state) => state.currentToolUses)
+  const currentToolUses = AgentStore.useStoreState(
+    (state) => state.currentToolUses
+  )
 
   if (currentToolUses.length === 0) {
     return null
@@ -30,17 +18,20 @@ export const ToolUses: React.FC = () => {
 
         if (parts.length >= 3 && parts[0] === "mcp") {
           const serverName = parts[1]
-          const actualToolName = parts.slice(2).join("__")
+          const toolName = parts.slice(2).join("__")
 
           return (
             <Box key={idx} flexDirection="column" marginBottom={1}>
               <Box>
                 <Text color="yellow">[server] </Text>
+
                 <Text bold color="yellow">
                   {serverName}
                 </Text>
-                <Text color="yellow">: {actualToolName}</Text>
+
+                <Text color="yellow">: {toolName}</Text>
               </Box>
+
               <Box marginLeft={2} flexDirection="column">
                 {renderToolInput(tool.input)}
               </Box>
@@ -51,6 +42,7 @@ export const ToolUses: React.FC = () => {
         return (
           <Box key={idx} flexDirection="column" marginBottom={1}>
             <Text color="yellow">[tool] {tool.name}</Text>
+
             <Box marginLeft={2} flexDirection="column">
               {renderToolInput(tool.input)}
             </Box>
@@ -58,5 +50,19 @@ export const ToolUses: React.FC = () => {
         )
       })}
     </Box>
+  )
+}
+
+const renderToolInput = (obj: Record<string, unknown>) => {
+  const toolInput = formatToolInput(obj)
+
+  return (
+    <>
+      {toolInput.split("\n").map((line, idx) => (
+        <Text key={idx} dimColor>
+          {line}
+        </Text>
+      ))}
+    </>
   )
 }

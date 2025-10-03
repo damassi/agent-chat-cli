@@ -1,6 +1,6 @@
 import { Box, Text } from "ink"
 import Spinner from "ink-spinner"
-import { AgentStore } from "../store"
+import { AgentStore } from "store"
 
 export const ChatHeader: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)

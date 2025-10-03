@@ -1,6 +1,6 @@
-import { AgentStore } from "./store"
-import { AgentChat } from "./components/AgentChat"
-import { useConfig } from "./hooks/useConfig"
+import { AgentStore } from "store"
+import { AgentChat } from "components/AgentChat"
+import { useConfig } from "hooks/useConfig"
 
 export const App = () => {
   useConfig()
