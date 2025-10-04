@@ -39,9 +39,9 @@
 
 #### Agent Integration
 
-- [src/utils/runAgent.ts](../src/utils/runAgent.ts) - Shared agent logic:
-  - `createAgentQuery()` - Creates agent query with configuration
-  - `generateMessages()` - Async generator for message queue
+- [src/utils/runAgentLoop.ts](../src/utils/runAgentLoop.ts) - Shared agent logic:
+  - `runAgentLoop()` - Creates agent query with configuration
+  - `startConversation()` - Async generator for message queue
   - `messageTypes` - Constants for message type checking
 - [src/hooks/useAgent.ts](../src/hooks/useAgent.ts) - React hook for interactive agent mode:
   - Uses shared agent logic
@@ -99,7 +99,7 @@ The CLI can connect to external MCP servers as a client:
 1. MCP client calls `query_agent` tool with prompt
 2. Zod validates input schema
 3. `runQuery()` creates a message queue
-4. `createAgentQuery()` initializes agent with shared logic
+4. `runAgentLoop()` initializes agent with shared logic
 5. Prompt is resolved into the message queue
 6. Agent processes via async generator
 7. Response messages are collected
@@ -117,7 +117,7 @@ The CLI can also run as an MCP server itself, exposing the agent as a tool to ot
   - Registers `query_agent` tool with Zod validation
   - Shared by both stdio and HTTP modes
 - [src/mcp/utils/runQuery.ts](../src/mcp/utils/runQuery.ts) - Query execution
-  - Uses shared `createAgentQuery()` from agent integration
+  - Uses shared `runAgentLoop()` from agent integration
   - Manages message queue and session state
   - Processes streaming responses
   - Returns final text response

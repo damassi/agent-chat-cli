@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { loadConfig } from "utils/loadConfig"
-import { createAgentQuery, messageTypes } from "utils/runAgent"
+import { runAgentLoop, messageTypes } from "utils/runAgentLoop"
 import { MessageQueue } from "utils/MessageQueue"
 
 let sessionId: string | undefined
@@ -15,7 +15,7 @@ export const runQuery = async ({ prompt, mcpServer }: RunQueryOptions) => {
   const messageQueue = new MessageQueue()
   const streamEnabled = config.stream ?? false
 
-  const { response } = createAgentQuery({
+  const { response } = runAgentLoop({
     messageQueue,
     sessionId,
     config,

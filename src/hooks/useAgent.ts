@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 import { AgentStore } from "store"
 import { useMcpServers } from "hooks/useMcpServers"
-import { createAgentQuery, messageTypes } from "utils/runAgent"
+import { runAgentLoop, messageTypes } from "utils/runAgentLoop"
 
 export function useAgent() {
   const { initMcpServers } = useMcpServers()
@@ -18,7 +18,7 @@ export function useAgent() {
     actions.setAbortController(abortController)
 
     const runAgent = async () => {
-      const { response } = createAgentQuery({
+      const { response } = runAgentLoop({
         messageQueue,
         sessionId,
         config,

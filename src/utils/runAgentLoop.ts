@@ -12,7 +12,56 @@ export const messageTypes = {
   SYSTEM: "system",
 } as const
 
-export const generateMessages = async function* (
+export interface RunAgentLoopOptions {
+  messageQueue: MessageQueue
+  sessionId?: string
+  config: AgentChatConfig
+  abortController?: AbortController
+  onToolPermissionRequest?: (toolName: string, input: any) => void
+  setIsProcessing?: (value: boolean) => void
+}
+
+export const runAgentLoop = ({
+  messageQueue,
+  sessionId,
+  config,
+  abortController,
+  onToolPermissionRequest,
+  setIsProcessing,
+}: RunAgentLoopOptions) => {
+  const mcpPrompts = buildSystemPrompt(config.mcpServers)
+
+  const response = query({
+    prompt: startConversation(messageQueue, sessionId),
+    options: {
+      model: "claude-3-7-sonnet-latest",
+      permissionMode: config.permissionMode ?? "default",
+      includePartialMessages: config.stream ?? false,
+      mcpServers: config.mcpServers,
+      abortController,
+      systemPrompt: mcpPrompts
+        ? {
+            type: "preset",
+            preset: "claude_code",
+            append: mcpPrompts,
+          }
+        : undefined,
+      canUseTool: onToolPermissionRequest
+        ? createCanUseTool({
+            messageQueue,
+            onToolPermissionRequest,
+            setIsProcessing,
+          })
+        : undefined,
+    },
+  })
+
+  return {
+    response,
+  }
+}
+
+const startConversation = async function* (
   messageQueue: MessageQueue,
   sessionId?: string
 ) {
@@ -35,56 +84,5 @@ export const generateMessages = async function* (
         content: userMessage,
       },
     } as SDKUserMessage
-  }
-}
-
-export interface CreateAgentQueryOptions {
-  messageQueue: MessageQueue
-  sessionId?: string
-  config: AgentChatConfig
-  abortController?: AbortController
-  onToolPermissionRequest?: (toolName: string, input: any) => void
-  setIsProcessing?: (value: boolean) => void
-}
-
-export const createAgentQuery = (options: CreateAgentQueryOptions) => {
-  const {
-    messageQueue,
-    sessionId,
-    config,
-    abortController,
-    onToolPermissionRequest,
-    setIsProcessing,
-  } = options
-  const mcpPrompts = buildSystemPrompt(config.mcpServers)
-  const streamEnabled = config.stream ?? false
-
-  const response = query({
-    prompt: generateMessages(messageQueue, sessionId),
-    options: {
-      model: "claude-3-7-sonnet-latest",
-      permissionMode: config.permissionMode || "default",
-      mcpServers: config.mcpServers,
-      includePartialMessages: streamEnabled,
-      abortController,
-      systemPrompt: mcpPrompts
-        ? {
-            type: "preset",
-            preset: "claude_code",
-            append: mcpPrompts,
-          }
-        : undefined,
-      canUseTool: onToolPermissionRequest
-        ? createCanUseTool({
-            messageQueue,
-            onToolPermissionRequest,
-            setIsProcessing,
-          })
-        : undefined,
-    },
-  })
-
-  return {
-    response,
   }
 }
