@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { runQuery } from "mcp/utils/runQuery"
 import { getAgentStatus } from "mcp/utils/getAgentStatus"
+import { runStandaloneAgentLoop } from "mcp/utils/runStandaloneAgentLoop"
 import { z } from "zod"
 
 export const getMcpServer = () => {
@@ -26,7 +26,7 @@ export const getMcpServer = () => {
       },
     },
     async ({ query }) => {
-      const result = await runQuery({
+      const result = await runStandaloneAgentLoop({
         prompt: query,
         mcpServer,
       })

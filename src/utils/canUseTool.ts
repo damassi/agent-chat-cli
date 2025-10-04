@@ -6,7 +6,7 @@ import type {
 
 export interface CanUseToolOptions {
   messageQueue: MessageQueue
-  onToolPermissionRequest: (toolName: string, input: any) => void
+  onToolPermissionRequest?: (toolName: string, input: any) => void
   setIsProcessing?: (value: boolean) => void
 }
 
@@ -21,7 +21,9 @@ export const createCanUseTool = (options: CanUseToolOptions) => {
       suggestions?: PermissionUpdate[]
     }
   ): Promise<PermissionResult> => {
-    onToolPermissionRequest(toolName, input)
+    if (onToolPermissionRequest) {
+      onToolPermissionRequest(toolName, input)
+    }
 
     const userResponse = await messageQueue.waitForMessage()
     const response = userResponse.toLowerCase().trim()

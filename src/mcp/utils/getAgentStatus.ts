@@ -1,13 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { loadConfig } from "utils/loadConfig"
-import { createAgentQuery, messageTypes } from "utils/runAgent"
+import { runAgentLoop, messageTypes } from "utils/runAgentLoop"
 import { MessageQueue } from "utils/MessageQueue"
 
 export const getAgentStatus = async (mcpServer?: McpServer) => {
   const config = await loadConfig()
   const messageQueue = new MessageQueue()
 
-  const { response } = createAgentQuery({
+  const { response } = runAgentLoop({
     messageQueue,
     config,
   })

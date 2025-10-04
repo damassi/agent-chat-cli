@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { loadConfig } from "utils/loadConfig"
-import { createAgentQuery, messageTypes } from "utils/runAgent"
+import { runAgentLoop, messageTypes } from "utils/runAgentLoop"
 import { MessageQueue } from "utils/MessageQueue"
 
 let sessionId: string | undefined
@@ -10,12 +10,15 @@ interface RunQueryOptions {
   mcpServer?: McpServer
 }
 
-export const runQuery = async ({ prompt, mcpServer }: RunQueryOptions) => {
+export const runStandaloneAgentLoop = async ({
+  prompt,
+  mcpServer,
+}: RunQueryOptions) => {
   const config = await loadConfig()
   const messageQueue = new MessageQueue()
   const streamEnabled = config.stream ?? false
 
-  const { response } = createAgentQuery({
+  const { response } = runAgentLoop({
     messageQueue,
     sessionId,
     config,
@@ -26,7 +29,7 @@ export const runQuery = async ({ prompt, mcpServer }: RunQueryOptions) => {
   messageQueue.sendMessage(prompt)
 
   let fullResponse = ""
-  let currentAssistantMessage = ""
+  let assistantMessage = ""
 
   try {
     for await (const message of response) {
@@ -43,7 +46,7 @@ export const runQuery = async ({ prompt, mcpServer }: RunQueryOptions) => {
 
             if (event.type === "content_block_delta") {
               if (event.delta.type === "text_delta") {
-                currentAssistantMessage += event.delta.text
+                assistantMessage += event.delta.text
               }
             }
           }
@@ -54,7 +57,7 @@ export const runQuery = async ({ prompt, mcpServer }: RunQueryOptions) => {
           for (const content of message.message.content) {
             if (content.type === "text") {
               if (!streamEnabled) {
-                currentAssistantMessage += content.text
+                assistantMessage += content.text
               }
             } else if (content.type === "tool_use") {
               // Emit tool use notification if mcpServer is available
@@ -74,8 +77,8 @@ export const runQuery = async ({ prompt, mcpServer }: RunQueryOptions) => {
         }
 
         case message.type === messageTypes.RESULT: {
-          if (currentAssistantMessage) {
-            fullResponse = currentAssistantMessage
+          if (assistantMessage) {
+            fullResponse = assistantMessage
           }
           return fullResponse
         }
