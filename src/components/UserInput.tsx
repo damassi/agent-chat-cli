@@ -1,11 +1,13 @@
 import { Box } from "ink"
 import TextInput from "ink-text-input"
 import { BlinkCaret } from "components/BlinkCaret"
+import { useCycleMessages } from "hooks/useCycleMessages"
 import { AgentStore } from "store"
 
 export const UserInput: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
   const actions = AgentStore.useStoreActions((actions) => actions)
+  const { reset } = useCycleMessages()
 
   const handleSubmit = (value: string) => {
     if (value.toLowerCase() === "exit") {
@@ -25,6 +27,7 @@ export const UserInput: React.FC = () => {
     store.messageQueue.sendMessage(value)
 
     actions.setInput("")
+    reset()
   }
 
   return (

@@ -49,6 +49,7 @@ export interface PendingToolPermission {
 }
 
 export interface StoreModel {
+  abortController?: AbortController
   chatHistory: ChatHistoryEntry[]
   config: AgentChatConfig
   currentAssistantMessage: string
@@ -65,6 +66,7 @@ export interface StoreModel {
   isBooted: Computed<StoreModel, boolean>
 
   // Actions
+  abortRequest: Action<StoreModel>
   addChatHistoryEntry: Action<StoreModel, ChatHistoryEntry>
   addToolUse: Action<StoreModel, ToolUse>
   appendCurrentAssistantMessage: Action<StoreModel, string>
@@ -74,6 +76,7 @@ export interface StoreModel {
     StoreModel,
     PendingToolPermission | undefined
   >
+  setAbortController: Action<StoreModel, AbortController | undefined>
   setConfig: Action<StoreModel, AgentChatConfig>
   setcurrentAssistantMessage: Action<StoreModel, string>
   setCurrentToolUses: Action<StoreModel, ToolUse[]>
@@ -85,6 +88,7 @@ export interface StoreModel {
 }
 
 export const AgentStore = createContextStore<StoreModel>({
+  abortController: undefined,
   chatHistory: [],
   messageQueue: new MessageQueue(),
   sessionId: undefined,
@@ -103,6 +107,11 @@ export const AgentStore = createContextStore<StoreModel>({
   }),
 
   // Actions
+  abortRequest: action((state) => {
+    state.abortController?.abort()
+    state.isProcessing = false
+  }),
+
   addChatHistoryEntry: action((state, payload) => {
     state.chatHistory.push(payload)
   }),
@@ -157,5 +166,9 @@ export const AgentStore = createContextStore<StoreModel>({
 
   setPendingToolPermission: action((state, payload) => {
     state.pendingToolPermission = payload
+  }),
+
+  setAbortController: action((state, payload) => {
+    state.abortController = payload
   }),
 })

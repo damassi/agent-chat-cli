@@ -35,7 +35,8 @@
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",
     "marked": "^16.3.0",
-    "react": "^19.1.1"
+    "react": "^19.1.1",
+    "use-cursor": "^1.2.3"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

@@ -25,12 +25,12 @@ export const AgentChat: React.FC = () => {
 
   useInput((_input, key) => {
     if (key.escape && state.isProcessing) {
-      actions.setIsProcessing(false)
+      actions.abortRequest()
     }
   })
 
   return (
-    <Box flexDirection="column" paddingLeft={1}>
+    <Box flexDirection="column" paddingLeft={2}>
       <ChatHeader />
 
       <Box flexDirection="column">
