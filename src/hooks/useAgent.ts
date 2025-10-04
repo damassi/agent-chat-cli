@@ -10,17 +10,19 @@ export function useAgent() {
   const sessionId = AgentStore.useStoreState((state) => state.sessionId)
   const config = AgentStore.useStoreState((state) => state.config)
   const actions = AgentStore.useStoreActions((actions) => actions)
-
   const currentAssistantMessageRef = useRef("")
 
   useEffect(() => {
     const streamEnabled = config.stream ?? false
+    const abortController = new AbortController()
+    actions.setAbortController(abortController)
 
     const runAgent = async () => {
       const { response } = createAgentQuery({
         messageQueue,
         sessionId,
         config,
+        abortController,
         onToolPermissionRequest: (toolName, input) => {
           actions.setPendingToolPermission({ toolName, input })
         },
@@ -124,11 +126,21 @@ export function useAgent() {
           }
         }
       } catch (error) {
-        actions.setStats(`[agent-chat-cli] Error: ${error}`)
+        if (
+          error instanceof Error &&
+          !error.message.includes("process aborted by user")
+        ) {
+          actions.setStats(`[agent-chat-cli] ${error}`)
+        }
+
         actions.setIsProcessing(false)
       }
     }
 
     runAgent()
+
+    return () => {
+      abortController.abort()
+    }
   }, [])
 }

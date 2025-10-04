@@ -42,6 +42,7 @@ export interface CreateAgentQueryOptions {
   messageQueue: MessageQueue
   sessionId?: string
   config: AgentChatConfig
+  abortController?: AbortController
   onToolPermissionRequest?: (toolName: string, input: any) => void
   setIsProcessing?: (value: boolean) => void
 }
@@ -51,6 +52,7 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
     messageQueue,
     sessionId,
     config,
+    abortController,
     onToolPermissionRequest,
     setIsProcessing,
   } = options
@@ -60,10 +62,11 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
   const response = query({
     prompt: generateMessages(messageQueue, sessionId),
     options: {
-      model: "sonnet",
+      model: "claude-3-7-sonnet-latest",
       permissionMode: config.permissionMode || "default",
       mcpServers: config.mcpServers,
       includePartialMessages: streamEnabled,
+      abortController,
       systemPrompt: mcpPrompts
         ? {
             type: "preset",
