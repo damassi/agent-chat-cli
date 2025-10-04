@@ -43,10 +43,17 @@ export interface CreateAgentQueryOptions {
   sessionId?: string
   config: AgentChatConfig
   onToolPermissionRequest?: (toolName: string, input: any) => void
+  setIsProcessing?: (value: boolean) => void
 }
 
 export const createAgentQuery = (options: CreateAgentQueryOptions) => {
-  const { messageQueue, sessionId, config, onToolPermissionRequest } = options
+  const {
+    messageQueue,
+    sessionId,
+    config,
+    onToolPermissionRequest,
+    setIsProcessing,
+  } = options
   const mcpPrompts = buildSystemPrompt(config.mcpServers)
   const streamEnabled = config.stream ?? false
 
@@ -68,6 +75,7 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
         ? createCanUseTool({
             messageQueue,
             onToolPermissionRequest,
+            setIsProcessing,
           })
         : undefined,
     },

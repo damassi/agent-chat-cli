@@ -1,3 +1,4 @@
+import { BlinkCaret } from "components/BlinkCaret"
 import { Box, Text, useInput } from "ink"
 import TextInput from "ink-text-input"
 import { AgentStore } from "store"
@@ -7,10 +8,13 @@ export const ToolPermissionPrompt: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
   const actions = AgentStore.useStoreActions((actions) => actions)
 
-  if (!store.pendingToolPermission) return null
+  if (!store.pendingToolPermission) {
+    return null
+  }
 
-  const { toolName } = store.pendingToolPermission
-  const { serverName, toolName: shortToolName } = getToolInfo(toolName)
+  const { serverName, toolName } = getToolInfo(
+    store.pendingToolPermission.toolName
+  )
 
   const handleSubmit = (value: string) => {
     const response = value.trim() || "y"
@@ -51,7 +55,7 @@ export const ToolPermissionPrompt: React.FC = () => {
           {serverName ? (
             <>
               <Text color="cyan">[{serverName}]</Text>
-              <Text> {shortToolName}</Text>
+              <Text> {toolName}</Text>
             </>
           ) : (
             <Text>{toolName}</Text>
@@ -60,11 +64,13 @@ export const ToolPermissionPrompt: React.FC = () => {
 
         <Box marginTop={1}>
           <Text dimColor>
-            Allow? (Enter=yes, ESC=no, or type modified input):{" "}
+            Allow? (Enter=yes, ESC=no, or ask another question):{" "}
           </Text>
         </Box>
 
         <Box>
+          <BlinkCaret interval={100} color="green" enabled />
+
           <TextInput
             value={store.input}
             onChange={actions.setInput}

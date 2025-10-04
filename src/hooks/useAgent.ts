@@ -22,6 +22,7 @@ export function useAgent() {
         onToolPermissionRequest: (toolName, input) => {
           actions.setPendingToolPermission({ toolName, input })
         },
+        setIsProcessing: actions.setIsProcessing,
       })
 
       await initMcpServers(response)

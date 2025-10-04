@@ -1,76 +1,87 @@
 import type { MessageQueue } from "utils/MessageQueue"
-import type { PermissionUpdate } from "@anthropic-ai/claude-agent-sdk"
+import type {
+  PermissionUpdate,
+  PermissionResult,
+} from "@anthropic-ai/claude-agent-sdk"
 
 export interface CanUseToolOptions {
   messageQueue: MessageQueue
   onToolPermissionRequest: (toolName: string, input: any) => void
+  setIsProcessing?: (value: boolean) => void
 }
 
 export const createCanUseTool = (options: CanUseToolOptions) => {
-  const { messageQueue, onToolPermissionRequest } = options
+  const { messageQueue, onToolPermissionRequest, setIsProcessing } = options
 
-  return async (
+  const confirmPrompt = async (
     toolName: string,
     input: any,
-    options: { signal: AbortSignal; suggestions: PermissionUpdate[] }
-  ) => {
+    options: {
+      signal: AbortSignal
+      suggestions?: PermissionUpdate[]
+    }
+  ): Promise<PermissionResult> => {
     onToolPermissionRequest(toolName, input)
-
-    console.log(`[canUseTool] Tool: ${toolName}`)
-    console.log(`[canUseTool] Suggestions:`, options.suggestions)
 
     const userResponse = await messageQueue.waitForMessage()
     const response = userResponse.toLowerCase().trim()
 
-    if (!response || ["y", "yes", "allow"].includes(response)) {
-      const result: {
-        behavior: "allow"
-        updatedInput: any
-        updatedPermissions?: PermissionUpdate[]
-      } = {
-        behavior: "allow" as const,
+    const CONFIRM = ["y", "yes", "allow"].includes(response)
+    const DENY = ["n", "no", "deny"].includes(response)
+
+    if (CONFIRM) {
+      const updatedPermissions: PermissionUpdate[] | undefined = (() => {
+        switch (true) {
+          // Claude Agent SDK tools can be auto-updated via suggestions from SDK
+          case options.suggestions && options.suggestions.length > 0: {
+            return options.suggestions
+          }
+
+          // MCP tools require custom rules, since they are not known ahead
+          // of time
+          case toolName.startsWith("mcp__"): {
+            return [
+              {
+                type: "addRules",
+                rules: [{ toolName }],
+                behavior: "allow",
+                destination: "session",
+              },
+            ]
+          }
+        }
+      })()
+
+      return {
+        behavior: "allow",
         updatedInput: input,
+        updatedPermissions,
       }
-
-      if (options.suggestions && options.suggestions.length > 0) {
-        console.log(
-          `[canUseTool] Allowing with ${options.suggestions.length} permission updates`
-        )
-        result.updatedPermissions = options.suggestions
-      } else if (toolName.startsWith("mcp__")) {
-        // For MCP tools, create a manual permission rule since SDK doesn't provide suggestions
-        console.log(
-          `[canUseTool] Creating manual permission rule for MCP tool: ${toolName}`
-        )
-        result.updatedPermissions = [
-          {
-            type: "addRules",
-            rules: [{ toolName }],
-            behavior: "allow",
-            destination: "session",
-          },
-        ]
-      } else {
-        console.log(
-          `[canUseTool] No suggestions provided by SDK, cannot persist permissions`
-        )
-      }
-
-      return result
     }
 
-    if (["n", "no", "deny"].includes(response)) {
+    // Keep isProcessing true so UI shows "Agent is thinking..." while it responds
+    if (setIsProcessing) {
+      setTimeout(() => {
+        setIsProcessing(true)
+      }, 50)
+    }
+
+    if (DENY) {
       return {
-        behavior: "deny" as const,
+        behavior: "deny",
         message: "User denied permission",
         interrupt: true,
       }
     }
 
+    // If user typed anything other than yes/no, pass it as new input
+    // and interrupt.
     return {
-      behavior: "deny" as const,
-      message: "User modified input",
+      behavior: "deny",
+      message: userResponse,
       interrupt: true,
     }
   }
+
+  return confirmPrompt
 }
