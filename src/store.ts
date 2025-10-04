@@ -72,6 +72,7 @@ export interface StoreModel {
   appendCurrentAssistantMessage: Action<StoreModel, string>
   clearCurrentAssistantMessage: Action<StoreModel>
   clearToolUses: Action<StoreModel>
+  sendMessage: Action<StoreModel, string>
   setPendingToolPermission: Action<
     StoreModel,
     PendingToolPermission | undefined
@@ -114,6 +115,13 @@ export const AgentStore = createContextStore<StoreModel>({
 
   addChatHistoryEntry: action((state, payload) => {
     state.chatHistory.push(payload)
+  }),
+
+  sendMessage: action((state, payload) => {
+    state.isProcessing = true
+    state.stats = null
+    state.messageQueue.sendMessage(payload)
+    state.input = ""
   }),
 
   setSessionId: action((state, payload) => {

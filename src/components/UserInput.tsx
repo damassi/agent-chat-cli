@@ -4,29 +4,39 @@ import { BlinkCaret } from "components/BlinkCaret"
 import { useCycleMessages } from "hooks/useCycleMessages"
 import { AgentStore } from "store"
 
+const commands = {
+  CLEAR: "clear",
+  EXIT: "exit",
+}
+
 export const UserInput: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
   const actions = AgentStore.useStoreActions((actions) => actions)
   const { reset } = useCycleMessages()
 
   const handleSubmit = (value: string) => {
-    if (value.toLowerCase() === "exit") {
+    if (value.toLowerCase() === commands.EXIT) {
       process.exit(0)
     }
 
-    if (!value.trim()) return
+    if (value.toLowerCase() === commands.CLEAR) {
+      console.clear()
+      actions.setInput("")
+      reset()
+      return
+    }
+
+    if (!value.trim()) {
+      return
+    }
 
     actions.addChatHistoryEntry({
       type: "message",
       role: "user",
       content: value,
     })
-    actions.setIsProcessing(true)
-    actions.setStats(null)
 
-    store.messageQueue.sendMessage(value)
-
-    actions.setInput("")
+    actions.sendMessage(value)
     reset()
   }
 
