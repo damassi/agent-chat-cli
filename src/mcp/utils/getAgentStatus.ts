@@ -1,10 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { loadConfig } from "utils/loadConfig"
 import { createAgentQuery, messageTypes } from "utils/runAgent"
+import { MessageQueue } from "utils/MessageQueue"
 
 export const getAgentStatus = async (mcpServer?: McpServer) => {
   const config = await loadConfig()
-  const messageQueue: { resolve: (value: string) => void }[] = []
+  const messageQueue = new MessageQueue()
 
   const { response } = createAgentQuery({
     messageQueue,
@@ -13,7 +14,7 @@ export const getAgentStatus = async (mcpServer?: McpServer) => {
 
   await new Promise((resolve) => setTimeout(resolve, 0))
 
-  messageQueue[0]?.resolve("status")
+  messageQueue.sendMessage("status")
 
   for await (const message of response) {
     if (

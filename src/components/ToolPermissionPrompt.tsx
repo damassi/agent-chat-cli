@@ -13,17 +13,18 @@ export const ToolPermissionPrompt: React.FC = () => {
   const { serverName, toolName: shortToolName } = getToolInfo(toolName)
 
   const handleSubmit = (value: string) => {
-    // Default to "y" if Enter pressed with no input
     const response = value.trim() || "y"
 
     // Resolve ALL pending tool permission requests with the same response
     // This handles the case where multiple tools are called in parallel
-    while (store.messageQueue.length > 0 && store.pendingToolPermission) {
-      const item = store.messageQueue[0]
-      if (item) {
-        item.resolve(response)
-        store.messageQueue.shift()
-      } else {
+    while (
+      store.messageQueue.hasPendingRequests() &&
+      store.pendingToolPermission
+    ) {
+      store.messageQueue.sendMessage(response)
+
+      // Check if there are still more requests after sending
+      if (!store.messageQueue.hasPendingRequests()) {
         break
       }
     }
