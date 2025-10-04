@@ -10,7 +10,6 @@ export function useAgent() {
   const sessionId = AgentStore.useStoreState((state) => state.sessionId)
   const config = AgentStore.useStoreState((state) => state.config)
   const actions = AgentStore.useStoreActions((actions) => actions)
-
   const currentAssistantMessageRef = useRef("")
 
   useEffect(() => {

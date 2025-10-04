@@ -1,20 +1,19 @@
 import { Box, Text, useInput } from "ink"
 import Spinner from "ink-spinner"
-import TextInput from "ink-text-input"
 import { ChatHeader } from "components/ChatHeader"
 import { Markdown } from "components/Markdown"
 import { Stats } from "components/Stats"
 import { ToolPermissionPrompt } from "components/ToolPermissionPrompt"
+import { UserInput } from "components/UserInput"
 import { useAgent } from "hooks/useAgent"
 import { useMcpClient } from "hooks/useMcpClient"
 import { AgentStore } from "store"
 import { formatToolInput } from "utils/formatToolInput"
 import { getToolInfo } from "utils/getToolInfo"
-import { BlinkCaret } from "components/BlinkCaret"
 
 export const AgentChat: React.FC = () => {
-  const store = AgentStore.useStoreState((state) => state)
   const actions = AgentStore.useStoreActions((actions) => actions)
+  const state = useChatState()
 
   const isClient = process.argv.includes("--client")
 
@@ -24,38 +23,18 @@ export const AgentChat: React.FC = () => {
     useAgent()
   }
 
-  useInput((input, key) => {
-    if (key.escape && store.isProcessing) {
+  useInput((_input, key) => {
+    if (key.escape && state.isProcessing) {
       actions.setIsProcessing(false)
     }
   })
-
-  const handleSubmit = (value: string) => {
-    if (value.toLowerCase() === "exit") {
-      process.exit(0)
-    }
-
-    if (!value.trim()) return
-
-    actions.addChatHistoryEntry({
-      type: "message",
-      role: "user",
-      content: value,
-    })
-    actions.setIsProcessing(true)
-    actions.setStats(null)
-
-    store.messageQueue.sendMessage(value)
-
-    actions.setInput("")
-  }
 
   return (
     <Box flexDirection="column" paddingLeft={1}>
       <ChatHeader />
 
       <Box flexDirection="column">
-        {store.chatHistory.map((entry, idx) => {
+        {state.chatHistory.map((entry, idx) => {
           return (
             <Box key={idx}>
               {(() => {
@@ -120,13 +99,13 @@ export const AgentChat: React.FC = () => {
           )
         })}
 
-        {store.currentAssistantMessage && (
+        {state.currentAssistantMessage && (
           <Box flexDirection="column" marginBottom={1}>
             <Text bold color="blue">
               Agent:
             </Text>
 
-            <Markdown>{store.currentAssistantMessage}</Markdown>
+            <Markdown>{state.currentAssistantMessage}</Markdown>
           </Box>
         )}
 
@@ -135,11 +114,11 @@ export const AgentChat: React.FC = () => {
 
       {(() => {
         switch (true) {
-          case !!store.pendingToolPermission: {
+          case !!state.pendingToolPermission: {
             return <ToolPermissionPrompt />
           }
 
-          case store.isProcessing: {
+          case state.isProcessing: {
             return (
               <Text dimColor>
                 <Text color="cyan">
@@ -151,17 +130,7 @@ export const AgentChat: React.FC = () => {
           }
 
           default: {
-            return (
-              <Box>
-                <BlinkCaret enabled={store.mcpServers.length > 0} />
-
-                <TextInput
-                  value={store.input}
-                  onChange={actions.setInput}
-                  onSubmit={handleSubmit}
-                />
-              </Box>
-            )
+            return <UserInput />
           }
         }
       })()}
@@ -169,4 +138,22 @@ export const AgentChat: React.FC = () => {
       <Box marginTop={1} />
     </Box>
   )
+}
+
+const useChatState = () => {
+  const chatHistory = AgentStore.useStoreState((state) => state.chatHistory)
+  const currentAssistantMessage = AgentStore.useStoreState(
+    (state) => state.currentAssistantMessage
+  )
+  const pendingToolPermission = AgentStore.useStoreState(
+    (state) => state.pendingToolPermission
+  )
+  const isProcessing = AgentStore.useStoreState((state) => state.isProcessing)
+
+  return {
+    chatHistory,
+    currentAssistantMessage,
+    pendingToolPermission,
+    isProcessing,
+  }
 }
