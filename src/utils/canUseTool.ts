@@ -1,40 +1,87 @@
+import type { MessageQueue } from "utils/MessageQueue"
+import type {
+  PermissionUpdate,
+  PermissionResult,
+} from "@anthropic-ai/claude-agent-sdk"
+
 export interface CanUseToolOptions {
-  messageQueue: { resolve: (value: string) => void }[]
+  messageQueue: MessageQueue
   onToolPermissionRequest: (toolName: string, input: any) => void
+  setIsProcessing?: (value: boolean) => void
 }
 
 export const createCanUseTool = (options: CanUseToolOptions) => {
-  const { messageQueue, onToolPermissionRequest } = options
+  const { messageQueue, onToolPermissionRequest, setIsProcessing } = options
 
-  return async (toolName: string, input: any) => {
-    // Notify UI
+  const confirmPrompt = async (
+    toolName: string,
+    input: any,
+    options: {
+      signal: AbortSignal
+      suggestions?: PermissionUpdate[]
+    }
+  ): Promise<PermissionResult> => {
     onToolPermissionRequest(toolName, input)
 
-    const userResponse = await new Promise<string>((resolve) => {
-      messageQueue.push({ resolve })
-    })
-
+    const userResponse = await messageQueue.waitForMessage()
     const response = userResponse.toLowerCase().trim()
 
-    // Enter pressed (empty) or explicit "y"/"yes"/"allow"
-    if (!response || ["y", "yes", "allow"].includes(response)) {
-      return { behavior: "allow" as const, updatedInput: input }
+    const CONFIRM = ["y", "yes", "allow"].includes(response)
+    const DENY = ["n", "no", "deny"].includes(response)
+
+    if (CONFIRM) {
+      const updatedPermissions: PermissionUpdate[] | undefined = (() => {
+        switch (true) {
+          // Claude Agent SDK tools can be auto-updated via suggestions from SDK
+          case options.suggestions && options.suggestions.length > 0: {
+            return options.suggestions
+          }
+
+          // MCP tools require custom rules, since they are not known ahead
+          // of time
+          case toolName.startsWith("mcp__"): {
+            return [
+              {
+                type: "addRules",
+                rules: [{ toolName }],
+                behavior: "allow",
+                destination: "session",
+              },
+            ]
+          }
+        }
+      })()
+
+      return {
+        behavior: "allow",
+        updatedInput: input,
+        updatedPermissions,
+      }
     }
 
-    // ESC or explicit "n"/"no"/"deny"
-    if (["n", "no", "deny"].includes(response)) {
+    // Keep isProcessing true so UI shows "Agent is thinking..." while it responds
+    if (setIsProcessing) {
+      setTimeout(() => {
+        setIsProcessing(true)
+      }, 50)
+    }
+
+    if (DENY) {
       return {
-        behavior: "deny" as const,
+        behavior: "deny",
         message: "User denied permission",
         interrupt: true,
       }
     }
 
-    // Any other input is treated as a deny
+    // If user typed anything other than yes/no, pass it as new input
+    // and interrupt.
     return {
-      behavior: "deny" as const,
-      message: "User modified input",
+      behavior: "deny",
+      message: userResponse,
       interrupt: true,
     }
   }
+
+  return confirmPrompt
 }

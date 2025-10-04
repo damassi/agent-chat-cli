@@ -9,6 +9,7 @@ import {
   type Action,
   type Computed,
 } from "easy-peasy"
+import { MessageQueue } from "utils/MessageQueue"
 
 export interface Message {
   type: "message"
@@ -55,7 +56,7 @@ export interface StoreModel {
   input: string
   isProcessing: boolean
   mcpServers: McpServerStatus[]
-  messageQueue: { resolve: (value: string) => void }[]
+  messageQueue: MessageQueue
   pendingToolPermission?: PendingToolPermission
   sessionId?: string
   stats?: string | null
@@ -85,7 +86,7 @@ export interface StoreModel {
 
 export const AgentStore = createContextStore<StoreModel>({
   chatHistory: [],
-  messageQueue: [],
+  messageQueue: new MessageQueue(),
   sessionId: undefined,
   mcpServers: [],
   input: "",

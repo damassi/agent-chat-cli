@@ -45,13 +45,7 @@ export const AgentChat: React.FC = () => {
     actions.setIsProcessing(true)
     actions.setStats(null)
 
-    if (store.messageQueue.length > 0) {
-      const item = store.messageQueue.shift()
-
-      if (item) {
-        item.resolve(value)
-      }
-    }
+    store.messageQueue.sendMessage(value)
 
     actions.setInput("")
   }

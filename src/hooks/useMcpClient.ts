@@ -94,9 +94,7 @@ export const useMcpClient = () => {
         })
 
         while (true) {
-          const userMessage = await new Promise<string>((resolve) => {
-            messageQueue.push({ resolve })
-          })
+          const userMessage = await messageQueue.waitForMessage()
 
           if (userMessage.toLowerCase() === "exit") {
             break

@@ -10,7 +10,7 @@ interface BlinkCaretProps {
 }
 
 export const BlinkCaret: React.FC<BlinkCaretProps> = ({
-  color = "green",
+  color = "purple",
   enabled = false,
   interval = BLINK_INTERVAL,
 }) => {

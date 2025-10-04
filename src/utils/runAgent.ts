@@ -2,6 +2,7 @@ import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
 import type { AgentChatConfig } from "store"
 import { buildSystemPrompt } from "utils/getPrompt"
 import { createCanUseTool } from "utils/canUseTool"
+import type { MessageQueue } from "utils/MessageQueue"
 
 export const messageTypes = {
   ASSISTANT: "assistant",
@@ -12,13 +13,11 @@ export const messageTypes = {
 } as const
 
 export const generateMessages = async function* (
-  messageQueue: { resolve: (value: string) => void }[],
+  messageQueue: MessageQueue,
   sessionId?: string
 ) {
   while (true) {
-    const userMessage = await new Promise<string>((resolve) => {
-      messageQueue.push({ resolve })
-    })
+    const userMessage = await messageQueue.waitForMessage()
 
     if (userMessage.toLowerCase() === "exit") {
       break
@@ -40,14 +39,21 @@ export const generateMessages = async function* (
 }
 
 export interface CreateAgentQueryOptions {
-  messageQueue: { resolve: (value: string) => void }[]
+  messageQueue: MessageQueue
   sessionId?: string
   config: AgentChatConfig
   onToolPermissionRequest?: (toolName: string, input: any) => void
+  setIsProcessing?: (value: boolean) => void
 }
 
 export const createAgentQuery = (options: CreateAgentQueryOptions) => {
-  const { messageQueue, sessionId, config, onToolPermissionRequest } = options
+  const {
+    messageQueue,
+    sessionId,
+    config,
+    onToolPermissionRequest,
+    setIsProcessing,
+  } = options
   const mcpPrompts = buildSystemPrompt(config.mcpServers)
   const streamEnabled = config.stream ?? false
 
@@ -69,6 +75,7 @@ export const createAgentQuery = (options: CreateAgentQueryOptions) => {
         ? createCanUseTool({
             messageQueue,
             onToolPermissionRequest,
+            setIsProcessing,
           })
         : undefined,
     },
