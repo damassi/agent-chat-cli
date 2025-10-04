@@ -4,17 +4,19 @@ import { useMcpServers } from "hooks/useMcpServers"
 import { createAgentQuery, messageTypes } from "utils/runAgent"
 
 export function useAgent() {
+  const { initMcpServers } = useMcpServers()
+
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
   const sessionId = AgentStore.useStoreState((state) => state.sessionId)
   const config = AgentStore.useStoreState((state) => state.config)
   const actions = AgentStore.useStoreActions((actions) => actions)
+
   const currentAssistantMessageRef = useRef("")
-  const { initMcpServers } = useMcpServers()
 
   useEffect(() => {
     const streamEnabled = config.stream ?? false
 
-    async function runAgent() {
+    const runAgent = async () => {
       const { response } = createAgentQuery({
         messageQueue,
         sessionId,
@@ -34,6 +36,7 @@ export function useAgent() {
               message.subtype === messageTypes.INIT: {
               actions.setSessionId(message.session_id)
               actions.setMcpServers(message.mcp_servers)
+
               continue
             }
 
@@ -48,6 +51,7 @@ export function useAgent() {
                   }
                 }
               }
+
               continue
             }
 
