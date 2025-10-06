@@ -103,3 +103,21 @@ const config = {
   },
 }
 ```
+
+#### Denying Tools
+
+You can prevent specific MCP tools from being used by adding a `denyTools` array to your server configuration:
+
+```ts
+const config = {
+  mcpServers: {
+    github: {
+      command: "npx",
+      args: ["..."],
+      denyTools: ["delete_repository", "update_secrets"],
+    },
+  },
+}
+```
+
+Denied tools are filtered at the SDK level and won't be available to the agent.
