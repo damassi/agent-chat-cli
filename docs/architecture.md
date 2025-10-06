@@ -68,7 +68,10 @@
 
 - [src/utils/getPrompt.ts](../src/utils/getPrompt.ts) - Loads and builds system prompts
 - [src/utils/formatToolInput.ts](../src/utils/formatToolInput.ts) - Formats tool input for display
-- [src/utils/getToolInfo.ts](../src/utils/getToolInfo.ts) - Parses MCP tool names
+- [src/utils/getToolInfo.ts](../src/utils/getToolInfo.ts) - Parses MCP tool names and manages tool filtering:
+  - `getToolInfo()` - Extracts server name and tool name from full MCP tool string
+  - `getDisallowedTools()` - Builds list of denied tools from config
+  - `isToolDisallowed()` - Checks if a specific tool is denied
 - [src/utils/validateEnv.ts](../src/utils/validateEnv.ts) - Environment validation
 
 #### UI Components
@@ -152,6 +155,7 @@ The CLI can also run as an MCP server itself, exposing the agent as a tool to ot
 - Visual display of tool invocations
 - Input parameter formatting
 - Server name extraction from tool names (format: `mcp__servername__toolname`)
+- Denied tool detection and UI indication (red "✖ Tool denied by configuration" message)
 
 ### Session Management
 
@@ -210,11 +214,25 @@ Uses `cosmiconfig` for flexible configuration loading:
       command: string
       args: string[]
       env?: Record<string, string>
-      prompt?: string  // Optional system prompt
+      prompt?: string      // Optional system prompt
+      denyTools?: string[] // Optional list of tools to deny
     }
   }
 }
 ```
+
+#### Tool Filtering
+
+The `denyTools` configuration allows blocking specific MCP tools:
+
+- Tool names are exact matches (wildcards not supported)
+- Denied tools are passed to the SDK as `disallowedTools` option
+- The SDK filters tools before they're available to the agent
+- The UI displays denied tool attempts with a red "✖ Tool denied by configuration" message
+- Implementation:
+  - `getDisallowedTools()` converts short tool names to full MCP format (`mcp__servername__toolname`)
+  - `isToolDisallowed()` checks if a tool is in the denied list
+  - `ToolUses` component displays denial notice when rendering tool use history
 
 #### MCP Client Mode Config
 

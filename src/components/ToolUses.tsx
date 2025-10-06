@@ -1,68 +1,50 @@
 import { Box, Text } from "ink"
 import { AgentStore } from "store"
+import type { ToolUse } from "store"
 import { formatToolInput } from "utils/formatToolInput"
+import { getToolInfo, isToolDisallowed } from "utils/getToolInfo"
 
-export const ToolUses: React.FC = () => {
-  const currentToolUses = AgentStore.useStoreState(
-    (state) => state.currentToolUses
-  )
+interface ToolUsesProps {
+  entry: ToolUse
+}
 
-  if (currentToolUses.length === 0) {
-    return null
-  }
+export const ToolUses: React.FC<ToolUsesProps> = ({ entry }) => {
+  const config = AgentStore.useStoreState((state) => state.config)
+  const { serverName, toolName } = getToolInfo(entry.name)
+  const isDenied = isToolDisallowed({ toolName: entry.name, config })
 
   return (
     <Box flexDirection="column" marginBottom={1}>
-      {currentToolUses.map((tool, idx) => {
-        const parts = tool.name.split("__")
+      <Box>
+        {serverName ? (
+          <>
+            <Text bold color="yellow">
+              [{serverName}]
+            </Text>
+            <Text color="yellow">: {toolName}</Text>
+          </>
+        ) : (
+          <Text color="yellow">[tool] {entry.name}</Text>
+        )}
+      </Box>
 
-        if (parts.length >= 3 && parts[0] === "mcp") {
-          const serverName = parts[1]
-          const toolName = parts.slice(2).join("__")
+      {isDenied && (
+        <Box marginLeft={2}>
+          <Text color="red">✖ Tool denied by configuration</Text>
+        </Box>
+      )}
 
-          return (
-            <Box key={idx} flexDirection="column" marginBottom={1}>
-              <Box>
-                <Text color="yellow">[server] </Text>
-
-                <Text bold color="yellow">
-                  {serverName}
-                </Text>
-
-                <Text color="yellow">: {toolName}</Text>
-              </Box>
-
-              <Box marginLeft={2} flexDirection="column">
-                {renderToolInput(tool.input)}
-              </Box>
-            </Box>
-          )
-        }
-
-        return (
-          <Box key={idx} flexDirection="column" marginBottom={1}>
-            <Text color="yellow">[tool] {tool.name}</Text>
-
-            <Box marginLeft={2} flexDirection="column">
-              {renderToolInput(tool.input)}
-            </Box>
-          </Box>
-        )
-      })}
+      <Box marginLeft={2} flexDirection="column">
+        {formatToolInput(entry.input)
+          .split("\n")
+          .map((line, lineIdx) => {
+            return (
+              <Text key={lineIdx} dimColor>
+                {line}
+              </Text>
+            )
+          })}
+      </Box>
     </Box>
-  )
-}
-
-const renderToolInput = (obj: Record<string, unknown>) => {
-  const toolInput = formatToolInput(obj)
-
-  return (
-    <>
-      {toolInput.split("\n").map((line, idx) => (
-        <Text key={idx} dimColor>
-          {line}
-        </Text>
-      ))}
-    </>
   )
 }

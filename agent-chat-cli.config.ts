@@ -3,7 +3,7 @@ import { getPrompt } from "./src/utils/getPrompt"
 
 const config: AgentChatConfig = {
   stream: false,
-  permissionMode: "default",
+  permissionMode: "bypassPermissions",
   mcpServers: {
     github: {
       prompt: getPrompt("github.md"),
@@ -17,6 +17,7 @@ const config: AgentChatConfig = {
       env: {
         GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN!,
       },
+      denyTools: [],
     },
     notion: {
       prompt: getPrompt("notion.md"),

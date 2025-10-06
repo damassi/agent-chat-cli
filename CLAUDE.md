@@ -12,10 +12,12 @@ Default to using Bun instead of Node.js.
 ## Main Rules
 
 - **CRITICAL:** For questions about overall architecture, please see `/docs/architecture.md`. Read it.
+- Prefer map/filter/forEach/reduce over imperative forms
 - Prefer `const foo = () => { ... }` over `function foo`
 - Prefer named exports vs default exports
 - Prefer try/catch over vanilla promises
-- Never use implicit returns in react components. They should ONLY be used in one-liners.
+- If a function has two or more arguments, use an object. And use an interface, vs adding types inline.
+- Never use implicit returns in react components. They should ONLY be used in one-liners.-
 
 ## APIs
 
