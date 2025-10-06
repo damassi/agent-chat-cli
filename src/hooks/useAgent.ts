@@ -1,11 +1,8 @@
 import { useEffect, useRef } from "react"
 import { AgentStore } from "store"
-import { useMcpServers } from "hooks/useMcpServers"
-import { runAgentLoop, messageTypes } from "utils/runAgentLoop"
+import { runAiAgentLoop, messageTypes } from "utils/runAiAgentLoop"
 
 export function useAgent() {
-  const { initMcpServers } = useMcpServers()
-
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
   const sessionId = AgentStore.useStoreState((state) => state.sessionId)
   const config = AgentStore.useStoreState((state) => state.config)
@@ -18,7 +15,7 @@ export function useAgent() {
     actions.setAbortController(abortController)
 
     const runAgent = async () => {
-      const { response } = runAgentLoop({
+      const { response } = runAiAgentLoop({
         messageQueue,
         sessionId,
         config,
@@ -29,7 +26,7 @@ export function useAgent() {
         setIsProcessing: actions.setIsProcessing,
       })
 
-      await initMcpServers(response)
+      // No need to call initMcpServers - the new implementation handles it in the INIT message
 
       try {
         for await (const message of response) {
