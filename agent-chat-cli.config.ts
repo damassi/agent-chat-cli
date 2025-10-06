@@ -2,8 +2,6 @@ import type { AgentChatConfig } from "./src/store"
 import { getPrompt } from "./src/utils/getPrompt"
 
 const config: AgentChatConfig = {
-  stream: false,
-  permissionMode: "bypassPermissions",
   systemPrompt: getPrompt("system.md"),
   mcpServers: {
     github: {
@@ -26,6 +24,8 @@ const config: AgentChatConfig = {
       args: ["mcp-remote@0.1.29", "https://mcp.notion.com/mcp"],
     },
   },
+  permissionMode: "bypassPermissions",
+  stream: false,
 }
 
 export default config
