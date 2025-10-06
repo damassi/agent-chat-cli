@@ -90,10 +90,13 @@ The server exposes an `ask_agent` tool that other MCP clients can use to interac
 
 MCP servers and system prompts are configured in `agent-chat-cli.config.ts`.
 
+A system prompt can be added to the root of the config via `systemPrompt`.
+
 To add specific instructions for each MCP server, create a markdown file in `src/prompts` and reference it in `agent-chat-cli.config.ts`:
 
 ```ts
 const config = {
+  systemPrompt: getPrompt("system.md"),
   mcpServers: {
     fooServer: {
       command: "npx",
