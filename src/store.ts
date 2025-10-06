@@ -28,10 +28,17 @@ export interface ToolUse {
   input: Record<string, unknown>
 }
 
-export type ChatHistoryEntry = Message | ToolUse
+export interface ToolDenied {
+  type: "tool_denied"
+  name: string
+  reason: string
+}
+
+export type ChatHistoryEntry = Message | ToolUse | ToolDenied
 
 type McpServerConfigWithPrompt = McpServerConfig & {
   prompt?: string
+  denyTools?: string[]
 }
 
 export interface AgentChatConfig {

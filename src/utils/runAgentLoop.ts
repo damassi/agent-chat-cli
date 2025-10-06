@@ -2,6 +2,7 @@ import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
 import type { AgentChatConfig } from "store"
 import { buildSystemPrompt } from "utils/getPrompt"
 import { createCanUseTool } from "utils/canUseTool"
+import { getDisallowedTools } from "utils/getToolInfo"
 import type { MessageQueue } from "utils/MessageQueue"
 
 export const messageTypes = {
@@ -37,6 +38,8 @@ export const runAgentLoop = ({
     setIsProcessing,
   })
 
+  const disallowedTools = getDisallowedTools(config)
+
   const response = query({
     prompt: startConversation(messageQueue, sessionId),
     options: {
@@ -47,6 +50,7 @@ export const runAgentLoop = ({
       abortController,
       canUseTool,
       systemPrompt,
+      disallowedTools,
     },
   })
 

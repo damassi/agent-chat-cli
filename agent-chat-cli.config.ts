@@ -17,6 +17,7 @@ const config: AgentChatConfig = {
       env: {
         GITHUB_ACCESS_TOKEN: process.env.GITHUB_ACCESS_TOKEN!,
       },
+      denyTools: ["search_repositories", "search_code"],
     },
     notion: {
       prompt: getPrompt("notion.md"),
