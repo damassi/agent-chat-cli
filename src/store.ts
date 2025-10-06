@@ -48,6 +48,7 @@ export interface AgentChatConfig {
   permissionMode?: PermissionMode
   retryDelay?: number
   stream?: boolean
+  systemPrompt?: string
 }
 
 export interface PendingToolPermission {

@@ -30,7 +30,7 @@ export const runAgentLoop = ({
   sessionId,
   setIsProcessing,
 }: RunAgentLoopOptions) => {
-  const systemPrompt = buildSystemPrompt(config.mcpServers)
+  const systemPrompt = buildSystemPrompt(config)
 
   const canUseTool = createCanUseTool({
     messageQueue,
