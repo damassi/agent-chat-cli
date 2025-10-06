@@ -20,9 +20,7 @@ export const UserInput: React.FC = () => {
     }
 
     if (value.toLowerCase() === commands.CLEAR) {
-      console.clear()
-      actions.setInput("")
-      reset()
+      actions.reset()
       return
     }
 

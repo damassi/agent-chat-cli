@@ -80,6 +80,7 @@ export interface StoreModel {
   appendCurrentAssistantMessage: Action<StoreModel, string>
   clearCurrentAssistantMessage: Action<StoreModel>
   clearToolUses: Action<StoreModel>
+  reset: Action<StoreModel>
   sendMessage: Action<StoreModel, string>
   setPendingToolPermission: Action<
     StoreModel,
@@ -174,6 +175,14 @@ export const AgentStore = createContextStore<StoreModel>({
 
   clearToolUses: action((state) => {
     state.currentToolUses = []
+  }),
+
+  reset: action((state) => {
+    state.chatHistory = []
+    state.currentAssistantMessage = ""
+    state.currentToolUses = []
+    state.input = ""
+    state.stats = null
   }),
 
   setConfig: action((state, payload) => {
