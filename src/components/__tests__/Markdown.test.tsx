@@ -1,35 +1,93 @@
+import React from "react"
+import { render } from "ink-testing-library"
 import { test, expect, describe } from "bun:test"
+import { Markdown } from "../Markdown"
 
 describe("Markdown", () => {
-  test("should render markdown text", () => {
-    // TODO: Implement test
+  test("should render plain text", () => {
+    const { lastFrame } = render(<Markdown>Hello world</Markdown>)
+
+    expect(lastFrame()).toContain("Hello world")
   })
 
-  test("should render code blocks with syntax highlighting", () => {
-    // TODO: Implement test
+  test("should render bold text", () => {
+    const { lastFrame } = render(<Markdown>**bold text**</Markdown>)
+
+    expect(lastFrame()).toContain("bold text")
+  })
+
+  test("should render italic text", () => {
+    const { lastFrame } = render(<Markdown>*italic text*</Markdown>)
+
+    expect(lastFrame()).toContain("italic text")
   })
 
   test("should render inline code", () => {
-    // TODO: Implement test
+    const { lastFrame } = render(<Markdown>`code`</Markdown>)
+
+    expect(lastFrame()).toContain("code")
+  })
+
+  test("should render code blocks", () => {
+    const { lastFrame } = render(
+      <Markdown>{`\`\`\`\nconst x = 1;\n\`\`\``}</Markdown>
+    )
+
+    expect(lastFrame()).toContain("const x = 1;")
   })
 
   test("should render headers", () => {
-    // TODO: Implement test
+    const { lastFrame } = render(<Markdown># Heading</Markdown>)
+
+    expect(lastFrame()).toContain("Heading")
   })
 
   test("should render lists", () => {
-    // TODO: Implement test
+    const { lastFrame } = render(
+      <Markdown>{`- Item 1\n- Item 2\n- Item 3`}</Markdown>
+    )
+
+    expect(lastFrame()).toContain("Item 1")
+    expect(lastFrame()).toContain("Item 2")
+    expect(lastFrame()).toContain("Item 3")
+    expect(lastFrame()).toContain("•")
   })
 
   test("should render links", () => {
-    // TODO: Implement test
+    const { lastFrame } = render(
+      <Markdown>[link text](https://example.com)</Markdown>
+    )
+
+    expect(lastFrame()).toContain("link text")
   })
 
-  test("should handle empty content", () => {
-    // TODO: Implement test
+  test("should render strikethrough", () => {
+    const { lastFrame } = render(<Markdown>~~strikethrough~~</Markdown>)
+
+    expect(lastFrame()).toContain("strikethrough")
   })
 
-  test("should handle malformed markdown", () => {
-    // TODO: Implement test
+  test("should render blockquotes", () => {
+    const content = "> Quote text"
+    const { lastFrame } = render(<Markdown>{content}</Markdown>)
+
+    expect(lastFrame()).toContain("Quote text")
+  })
+
+  test("should render horizontal rules", () => {
+    const { lastFrame } = render(<Markdown>---</Markdown>)
+
+    expect(lastFrame()).toContain("─")
+  })
+
+  test("should render mixed content", () => {
+    const { lastFrame } = render(
+      <Markdown>{`# Title\n\nSome **bold** and *italic* text with \`code\`.`}</Markdown>
+    )
+
+    expect(lastFrame()).toContain("Title")
+    expect(lastFrame()).toContain("bold")
+    expect(lastFrame()).toContain("italic")
+    expect(lastFrame()).toContain("code")
   })
 })

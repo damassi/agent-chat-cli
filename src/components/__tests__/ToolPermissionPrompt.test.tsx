@@ -1,27 +1,137 @@
+import React from "react"
+import { render } from "ink-testing-library"
 import { test, expect, describe } from "bun:test"
+import { ToolPermissionPrompt } from "../ToolPermissionPrompt"
+import { AgentStore } from "../../store"
 
 describe("ToolPermissionPrompt", () => {
-  test("should display tool permission request", () => {
-    // TODO: Implement test
+  test("should not render when no pending permission", () => {
+    const { lastFrame } = render(
+      <AgentStore.Provider>
+        <ToolPermissionPrompt />
+      </AgentStore.Provider>
+    )
+
+    expect(lastFrame()).toBe("")
   })
 
-  test("should show tool name and parameters", () => {
-    // TODO: Implement test
+  test("should render permission request with MCP tool", () => {
+    const { lastFrame, rerender } = render(
+      <AgentStore.Provider>
+        <TestWrapper
+          permission={{
+            toolName: "mcp__github__search_repositories",
+            input: { query: "test" },
+          }}
+        />
+      </AgentStore.Provider>
+    )
+
+    rerender(
+      <AgentStore.Provider>
+        <TestWrapper
+          permission={{
+            toolName: "mcp__github__search_repositories",
+            input: { query: "test" },
+          }}
+        />
+      </AgentStore.Provider>
+    )
+
+    expect(lastFrame()).toContain("[Tool Permission Request]")
+    expect(lastFrame()).toContain("Tool:")
+    expect(lastFrame()).toContain("[github]")
+    expect(lastFrame()).toContain("search_repositories")
   })
 
-  test("should handle approval", () => {
-    // TODO: Implement test
+  test("should render permission request with regular tool", () => {
+    const { lastFrame, rerender } = render(
+      <AgentStore.Provider>
+        <TestWrapper
+          permission={{
+            toolName: "regular_tool",
+            input: {},
+          }}
+        />
+      </AgentStore.Provider>
+    )
+
+    rerender(
+      <AgentStore.Provider>
+        <TestWrapper
+          permission={{
+            toolName: "regular_tool",
+            input: {},
+          }}
+        />
+      </AgentStore.Provider>
+    )
+
+    expect(lastFrame()).toContain("[Tool Permission Request]")
+    expect(lastFrame()).toContain("regular_tool")
   })
 
-  test("should handle rejection", () => {
-    // TODO: Implement test
+  test("should show prompt text", () => {
+    const { lastFrame, rerender } = render(
+      <AgentStore.Provider>
+        <TestWrapper
+          permission={{
+            toolName: "test_tool",
+            input: {},
+          }}
+        />
+      </AgentStore.Provider>
+    )
+
+    rerender(
+      <AgentStore.Provider>
+        <TestWrapper
+          permission={{
+            toolName: "test_tool",
+            input: {},
+          }}
+        />
+      </AgentStore.Provider>
+    )
+
+    expect(lastFrame()).toContain("Allow?")
+    expect(lastFrame()).toContain("Enter=yes")
+    expect(lastFrame()).toContain("ESC=no")
   })
 
-  test("should handle keyboard input", () => {
-    // TODO: Implement test
-  })
+  test("should show blink caret", () => {
+    const { lastFrame, rerender } = render(
+      <AgentStore.Provider>
+        <TestWrapper
+          permission={{
+            toolName: "test_tool",
+            input: {},
+          }}
+        />
+      </AgentStore.Provider>
+    )
 
-  test("should display formatted tool input", () => {
-    // TODO: Implement test
+    rerender(
+      <AgentStore.Provider>
+        <TestWrapper
+          permission={{
+            toolName: "test_tool",
+            input: {},
+          }}
+        />
+      </AgentStore.Provider>
+    )
+
+    expect(lastFrame()).toContain("▷")
   })
 })
+
+const TestWrapper = ({
+  permission,
+}: {
+  permission: { toolName: string; input: any }
+}) => {
+  const actions = AgentStore.useStoreActions((actions) => actions)
+  actions.setPendingToolPermission(permission)
+  return <ToolPermissionPrompt />
+}
