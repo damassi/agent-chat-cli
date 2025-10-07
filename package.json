@@ -8,6 +8,7 @@
     "start:client": "bun run src/index.tsx --client",
     "server": "bun run src/mcp/stdio.ts",
     "server:http": "bun run src/mcp/http.ts",
+    "test": "bun test",
     "type-check": "tsc --noEmit",
     "prepare": "husky"
   },
