@@ -13,7 +13,7 @@ export interface CanUseToolOptions {
 export const createCanUseTool = (options: CanUseToolOptions) => {
   const { messageQueue, onToolPermissionRequest, setIsProcessing } = options
 
-  const confirmPrompt = async (
+  const canUseTool = async (
     toolName: string,
     input: any,
     options: {
@@ -85,5 +85,5 @@ export const createCanUseTool = (options: CanUseToolOptions) => {
     }
   }
 
-  return confirmPrompt
+  return canUseTool
 }
