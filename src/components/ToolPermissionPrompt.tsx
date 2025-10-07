@@ -17,7 +17,7 @@ export const ToolPermissionPrompt: React.FC = () => {
   )
 
   const handleSubmit = (value: string) => {
-    const response = value.trim() || "y"
+    const response = value.trim() || "yes"
 
     // Resolve ALL pending tool permission requests with the same response
     // This handles the case where multiple tools are called in parallel
@@ -39,7 +39,7 @@ export const ToolPermissionPrompt: React.FC = () => {
 
   useInput((_input, key) => {
     if (key.escape) {
-      handleSubmit("n")
+      handleSubmit("no")
     }
   })
 
