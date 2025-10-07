@@ -96,12 +96,12 @@ To add specific instructions for each MCP server, create a markdown file in `src
 
 ```ts
 const config = {
-  systemPrompt: getPrompt("system.md"),
+  systemPrompt: "You are a helpful agent."
   mcpServers: {
-    fooServer: {
+    someMcpServer: {
       command: "npx",
       args: ["..."],
-      prompt: getPrompt("my-prompt.md"),
+      prompt: getPrompt("someMcpServer.md"),
     },
   },
 }
