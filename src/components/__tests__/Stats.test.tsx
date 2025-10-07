@@ -1,8 +1,8 @@
 import React from "react"
 import { render } from "ink-testing-library"
 import { test, expect, describe } from "bun:test"
-import { Stats } from "../Stats"
-import { AgentStore } from "../../store"
+import { Stats } from "components/Stats"
+import { AgentStore } from "store"
 
 describe("Stats", () => {
   test("should display stats string", () => {

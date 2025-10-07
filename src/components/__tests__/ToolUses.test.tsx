@@ -1,9 +1,9 @@
 import React from "react"
 import { render } from "ink-testing-library"
 import { test, expect, describe } from "bun:test"
-import { ToolUses } from "../ToolUses"
-import { AgentStore } from "../../store"
-import type { ToolUse } from "../../store"
+import { ToolUses } from "components/ToolUses"
+import { AgentStore } from "store"
+import type { ToolUse } from "store"
 
 describe("ToolUses", () => {
   test("should display MCP tool with server name", () => {

@@ -1,8 +1,8 @@
 import React from "react"
 import { render } from "ink-testing-library"
 import { test, expect, describe } from "bun:test"
-import { UserInput } from "../UserInput"
-import { AgentStore } from "../../store"
+import { UserInput } from "components/UserInput"
+import { AgentStore } from "store"
 
 describe("UserInput", () => {
   test("should render input field", () => {

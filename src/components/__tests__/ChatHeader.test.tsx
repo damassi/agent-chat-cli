@@ -1,8 +1,8 @@
 import React from "react"
 import { render } from "ink-testing-library"
 import { test, expect, describe } from "bun:test"
-import { ChatHeader } from "../ChatHeader"
-import { AgentStore } from "../../store"
+import { ChatHeader } from "components/ChatHeader"
+import { AgentStore } from "store"
 
 describe("ChatHeader", () => {
   test("should render title", () => {

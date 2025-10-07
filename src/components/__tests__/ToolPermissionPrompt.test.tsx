@@ -1,8 +1,8 @@
 import React from "react"
 import { render } from "ink-testing-library"
 import { test, expect, describe } from "bun:test"
-import { ToolPermissionPrompt } from "../ToolPermissionPrompt"
-import { AgentStore } from "../../store"
+import { ToolPermissionPrompt } from "components/ToolPermissionPrompt"
+import { AgentStore } from "store"
 
 describe("ToolPermissionPrompt", () => {
   test("should not render when no pending permission", () => {

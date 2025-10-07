@@ -21,8 +21,6 @@ describe("validateEnv", () => {
 
   test("should pass when all required environment variables are present", () => {
     process.env.ANTHROPIC_API_KEY = "test-key"
-    process.env.ARTSY_MCP_X_ACCESS_TOKEN = "test-token"
-    process.env.ARTSY_MCP_X_USER_ID = "test-user"
     process.env.GITHUB_ACCESS_TOKEN = "test-github"
 
     validateEnv()
@@ -33,32 +31,6 @@ describe("validateEnv", () => {
 
   test("should exit when ANTHROPIC_API_KEY is missing", () => {
     delete process.env.ANTHROPIC_API_KEY
-    process.env.ARTSY_MCP_X_ACCESS_TOKEN = "test-token"
-    process.env.ARTSY_MCP_X_USER_ID = "test-user"
-    process.env.GITHUB_ACCESS_TOKEN = "test-github"
-
-    validateEnv()
-
-    expect(consoleErrorSpy).toHaveBeenCalled()
-    expect(processExitSpy).toHaveBeenCalledWith(1)
-  })
-
-  test("should exit when ARTSY_MCP_X_ACCESS_TOKEN is missing", () => {
-    process.env.ANTHROPIC_API_KEY = "test-key"
-    delete process.env.ARTSY_MCP_X_ACCESS_TOKEN
-    process.env.ARTSY_MCP_X_USER_ID = "test-user"
-    process.env.GITHUB_ACCESS_TOKEN = "test-github"
-
-    validateEnv()
-
-    expect(consoleErrorSpy).toHaveBeenCalled()
-    expect(processExitSpy).toHaveBeenCalledWith(1)
-  })
-
-  test("should exit when ARTSY_MCP_X_USER_ID is missing", () => {
-    process.env.ANTHROPIC_API_KEY = "test-key"
-    process.env.ARTSY_MCP_X_ACCESS_TOKEN = "test-token"
-    delete process.env.ARTSY_MCP_X_USER_ID
     process.env.GITHUB_ACCESS_TOKEN = "test-github"
 
     validateEnv()
@@ -69,8 +41,6 @@ describe("validateEnv", () => {
 
   test("should exit when GITHUB_ACCESS_TOKEN is missing", () => {
     process.env.ANTHROPIC_API_KEY = "test-key"
-    process.env.ARTSY_MCP_X_ACCESS_TOKEN = "test-token"
-    process.env.ARTSY_MCP_X_USER_ID = "test-user"
     delete process.env.GITHUB_ACCESS_TOKEN
 
     validateEnv()
@@ -81,8 +51,6 @@ describe("validateEnv", () => {
 
   test("should exit when all environment variables are missing", () => {
     delete process.env.ANTHROPIC_API_KEY
-    delete process.env.ARTSY_MCP_X_ACCESS_TOKEN
-    delete process.env.ARTSY_MCP_X_USER_ID
     delete process.env.GITHUB_ACCESS_TOKEN
 
     validateEnv()
@@ -94,8 +62,6 @@ describe("validateEnv", () => {
   test("should display helpful error message with missing variables", () => {
     delete process.env.ANTHROPIC_API_KEY
     delete process.env.GITHUB_ACCESS_TOKEN
-    process.env.ARTSY_MCP_X_ACCESS_TOKEN = "test-token"
-    process.env.ARTSY_MCP_X_USER_ID = "test-user"
 
     validateEnv()
 

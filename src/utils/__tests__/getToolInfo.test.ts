@@ -3,8 +3,8 @@ import {
   getToolInfo,
   getDisallowedTools,
   isToolDisallowed,
-} from "../getToolInfo"
-import type { AgentChatConfig } from "../../store"
+} from "utils/getToolInfo"
+import type { AgentChatConfig } from "store"
 
 describe("getToolInfo", () => {
   test("should extract server name and tool name from MCP format", () => {

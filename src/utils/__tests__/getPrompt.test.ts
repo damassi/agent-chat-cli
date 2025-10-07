@@ -1,6 +1,6 @@
 import { test, expect, describe } from "bun:test"
-import { getPrompt, buildSystemPrompt } from "../getPrompt"
-import type { AgentChatConfig } from "../../store"
+import { getPrompt, buildSystemPrompt } from "utils/getPrompt"
+import type { AgentChatConfig } from "store"
 
 describe("getPrompt", () => {
   test("should load system prompt from file", () => {

@@ -1,8 +1,8 @@
 import React from "react"
 import { render } from "ink-testing-library"
 import { test, expect, describe } from "bun:test"
-import { useCycleMessages } from "../useCycleMessages"
-import { AgentStore } from "../../store"
+import { useCycleMessages } from "hooks/useCycleMessages"
+import { AgentStore } from "store"
 
 describe("useCycleMessages", () => {
   test("should initialize with no messages", () => {
