@@ -16,7 +16,7 @@ https://github.com/user-attachments/assets/00cfb9b6-ac65-4b95-8842-28ad0414ffd9
 
 ### Why?
 
-This addresses a gap I’ve noticed in the ecosystem, where spinning up conversational LLM interfaces often comes with a lot of overhead. For example:
+This addresses a gap I’ve noticed in the ecosystem, where spinning up conversational LLM interfaces often come with a lot of overhead. For example:
 
 - One shouldn’t need to use VS Code, Claude, or Claude Code to interact with MCP servers, with all their abundance of features.
 - How does one fine-tune behavior without expanding already long CLAUDE.md scripts (and similar configuration files)?
