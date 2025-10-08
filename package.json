@@ -32,7 +32,6 @@
     "@modelcontextprotocol/sdk": "^1.18.2",
     "cors": "^2.8.5",
     "cosmiconfig": "^9.0.0",
-    "cosmiconfig-typescript-loader": "^6.1.0",
     "easy-peasy": "^6.1.0",
     "express": "^5.1.0",
     "ink": "^6.3.1",

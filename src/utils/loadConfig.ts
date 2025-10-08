@@ -1,39 +1,12 @@
 import { cosmiconfig } from "cosmiconfig"
-import { TypeScriptLoader } from "cosmiconfig-typescript-loader"
-import type { McpServerConfig } from "@anthropic-ai/claude-agent-sdk"
-
-type McpServerConfigWithPrompt = McpServerConfig & {
-  prompt?: string
-}
-
-interface AgentChatConfig {
-  stream?: boolean
-  connectionTimeout?: number
-  maxRetries?: number
-  retryDelay?: number
-  mcpServers: Record<string, McpServerConfigWithPrompt>
-}
+import type { AgentChatConfig } from "store"
 
 export const loadConfig = async (): Promise<AgentChatConfig> => {
-  const explorer = cosmiconfig("agent-chat-cli", {
-    searchPlaces: [
-      "agent-chat-cli.config.ts",
-      "agent-chat-cli.config.js",
-      ".agent-chat-clirc",
-      ".agent-chat-clirc.json",
-      ".agent-chat-clirc.js",
-      ".agent-chat-clirc.ts",
-    ],
-    loaders: {
-      ".ts": TypeScriptLoader(),
-    },
-  })
-
-  const result = await explorer.search()
+  const result = await cosmiconfig("agent-chat-cli").search()
 
   if (!result || result.isEmpty) {
-    throw new Error("No configuration file found")
+    throw new Error("[agent-chat-cli] No configuration file found")
   }
 
-  return result.config as AgentChatConfig
+  return result.config
 }
