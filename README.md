@@ -12,7 +12,7 @@ The agent, including MCP server setup, is configured in [agent-chat-cli.config.t
 
 The MCP _client_ is configured in [mcp-client.config.ts](mcp-client.config.ts).
 
-https://github.com/user-attachments/assets/00cfb9b6-ac65-4b95-8842-28ad0414ffd9
+https://github.com/user-attachments/assets/bc4d490f-c938-42dd-a71e-298df95a39ea
 
 ### Why?
 
