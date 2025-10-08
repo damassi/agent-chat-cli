@@ -43,7 +43,7 @@ export const runAgentLoop = ({
   const response = query({
     prompt: startConversation(messageQueue, sessionId),
     options: {
-      model: "claude-3-7-sonnet-latest",
+      model: "haiku",
       permissionMode: config.permissionMode ?? "default",
       includePartialMessages: config.stream ?? false,
       mcpServers: config.mcpServers,
