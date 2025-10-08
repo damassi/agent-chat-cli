@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "lint": "oxlint",
     "start": "bun run src/index.tsx",
     "start:client": "bun run src/index.tsx --client",
     "server": "bun run src/mcp/stdio.ts",
@@ -20,6 +21,7 @@
     "husky": "^9.1.7",
     "ink-testing-library": "^4.0.0",
     "lint-staged": "^16.2.3",
+    "oxlint": "^1.20.0",
     "prettier": "^3.6.2"
   },
   "peerDependencies": {
@@ -41,7 +43,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
-      "bunx oxlint",
+      "oxlint",
       "prettier --write"
     ],
     "*.{json,md}": [
