@@ -19,6 +19,14 @@ export const BlinkCaret: React.FC<BlinkCaretProps> = ({
   useEffect(() => {
     if (!enabled) return
 
+    const isGhostty = process.env.TERM_PROGRAM === "ghostty"
+
+    if (isGhostty) {
+      // Disable blinking in Ghostty to avoid scroll position reset bug
+      setVisible(enabled)
+      return
+    }
+
     const refreshInterval = setInterval(() => {
       setVisible((v) => !v)
     }, interval)
