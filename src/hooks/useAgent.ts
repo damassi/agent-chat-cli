@@ -117,13 +117,7 @@ export function useAgent() {
               }
 
               if (!message.is_error) {
-                actions.setStats(
-                  `Completed in ${(message.duration_ms / 1000).toFixed(
-                    2
-                  )}s | Cost: $${message.total_cost_usd.toFixed(4)} | Turns: ${
-                    message.num_turns
-                  }`
-                )
+                actions.setStats(message)
               } else {
                 actions.setStats(`[agent-cli] Error: ${message.subtype}`)
               }

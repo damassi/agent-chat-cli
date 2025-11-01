@@ -1,6 +1,7 @@
 import type {
   McpServerConfig,
   PermissionMode,
+  SDKResultMessage,
 } from "@anthropic-ai/claude-agent-sdk"
 import {
   action,
@@ -41,16 +42,17 @@ export interface ToolDenied {
 export type ChatHistoryEntry = Message | ToolUse | ToolDenied
 
 type McpServerConfigWithPrompt = McpServerConfig & {
+  /** A detailed description of the MCP server that the inference agent evaluates */
   description: string
-  prompt?: () => Promise<string>
   disallowedTools?: string[]
   enabled?: boolean
+  prompt?: () => Promise<string>
 }
 
 export interface AgentChatConfig {
   agents?: Record<string, AgentConfig>
-  disallowedTools?: string[]
   connectionTimeout?: number
+  disallowedTools?: string[]
   maxRetries?: number
   mcpServers: Record<string, McpServerConfigWithPrompt>
   model?: "sonnet" | "haiku"
@@ -61,8 +63,8 @@ export interface AgentChatConfig {
 }
 
 export interface PendingToolPermission {
-  toolName: string
   input: any
+  toolName: string
 }
 
 export interface StoreModel {
@@ -80,9 +82,9 @@ export interface StoreModel {
   stats?: string | null
 
   // Computed
-  isBooted: Computed<StoreModel, boolean>
-  availableMcpServers: Computed<StoreModel, string[]>
   availableAgents: Computed<StoreModel, string[]>
+  availableMcpServers: Computed<StoreModel, string[]>
+  isBooted: Computed<StoreModel, boolean>
 
   // Actions
   abortRequest: Action<StoreModel>
@@ -91,6 +93,7 @@ export interface StoreModel {
   appendCurrentAssistantMessage: Action<StoreModel, string>
   clearCurrentAssistantMessage: Action<StoreModel>
   clearToolUses: Action<StoreModel>
+  handleMcpServerStatus: Thunk<StoreModel, McpServerStatus[]>
   reset: Action<StoreModel>
   sendMessage: Action<StoreModel, string>
   setPendingToolPermission: Action<
@@ -105,23 +108,22 @@ export interface StoreModel {
   setIsProcessing: Action<StoreModel, boolean>
   setMcpServers: Action<StoreModel, McpServerStatus[]>
   setSessionId: Action<StoreModel, string>
-  setStats: Action<StoreModel, string | null>
-  handleMcpServerStatus: Thunk<StoreModel, McpServerStatus[]>
+  setStats: Action<StoreModel, SDKResultMessage | null | string>
 }
 
 export const AgentStore = createContextStore<StoreModel>({
   abortController: new AbortController(),
   chatHistory: [],
-  messageQueue: new MessageQueue(),
-  sessionId: undefined,
-  mcpServers: [],
-  input: "",
-  isProcessing: false,
+  config: null as unknown as AgentChatConfig,
   currentAssistantMessage: "",
   currentToolUses: [],
+  input: "",
+  isProcessing: false,
+  mcpServers: [],
+  messageQueue: new MessageQueue(),
   pendingToolPermission: undefined,
+  sessionId: undefined,
   stats: undefined,
-  config: null as unknown as AgentChatConfig,
 
   // Computed
   isBooted: computed((state) => {
@@ -187,8 +189,18 @@ export const AgentStore = createContextStore<StoreModel>({
     state.currentToolUses.push(payload)
   }),
 
-  setStats: action((state, payload) => {
-    state.stats = payload
+  setStats: action((state, message) => {
+    if (!message) {
+      state.stats = null
+      return
+    }
+
+    if (typeof message === "string") {
+      state.stats = message
+      return
+    }
+
+    state.stats = `Completed in ${(message.duration_ms / 1000).toFixed(2)}s | Cost: $${message.total_cost_usd.toFixed(4)} | Turns: ${message.num_turns}`
   }),
 
   clearCurrentAssistantMessage: action((state) => {

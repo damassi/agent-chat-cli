@@ -5,7 +5,7 @@ import { z } from "zod"
 
 export const getMcpServer = () => {
   // Store Claude Agent SDK sessionId per-instance (not shared across threads)
-  let claudeSessionId: string | undefined
+  let sessionId: string | undefined
 
   // Map thread IDs to Claude Agent SDK session IDs for per-thread isolation
   const threadSessions = new Map<string, string>()
@@ -35,23 +35,23 @@ export const getMcpServer = () => {
       },
     },
     async ({ query }) => {
-      const existingConnectedServers = claudeSessionId
-        ? sessionConnectedServers.get(claudeSessionId)
+      const existingConnectedServers = sessionId
+        ? sessionConnectedServers.get(sessionId)
         : undefined
 
       const { response, connectedServers } = await runStandaloneAgentLoop({
         prompt: query,
         mcpServer,
-        sessionId: claudeSessionId,
+        sessionId,
         existingConnectedServers,
         onSessionIdReceived: (newSessionId) => {
-          claudeSessionId = newSessionId
+          sessionId = newSessionId
         },
       })
 
       // Update the session's connected servers
-      if (claudeSessionId) {
-        sessionConnectedServers.set(claudeSessionId, connectedServers)
+      if (sessionId) {
+        sessionConnectedServers.set(sessionId, connectedServers)
       }
 
       return {

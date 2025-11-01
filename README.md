@@ -2,7 +2,7 @@
 
 A minimalist, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview) and based on [damassi/agent-chat-cli](https://github.com/damassi/agent-chat-cli). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
 
-Additionally, via inference, Agent Chat CLI supports lazy, turn-based MCP connections to keep token costs down. The agent will only use those MCP servers you ask about, limiting the context that is sent up to the LLM. (After an MCP server is connected it remains connected, however.)
+Additionally, via inference, Agent Chat CLI supports lazy, turn-based MCP connections to keep token costs down and performance reasonable. The agent will only use those MCP servers you ask about, limiting the context that is sent up to the LLM. (After an MCP server is connected it remains connected, however.)
 
 ## Overview
 
@@ -75,7 +75,9 @@ Run the agent in interactive terminal mode:
 bun start
 ```
 
-You'll see a prompt where you can type your questions or requests.
+You'll see a prompt where you can type your questions or requests. If you send it a general "Help!" query it will generate a help menu based upon configured MCP servers, if said MCP servers have corresponding system prompts in the `prompts` folder:
+
+<img width="813" height="590" alt="Image" src="https://github.com/user-attachments/assets/2350639a-fb12-496a-9b32-b484fc14b8af" />
 
 Type `exit` to quit.
 
@@ -115,6 +117,8 @@ const config = {
   systemPrompt: getPrompt("system.md"),
   mcpServers: {
     someMcpServer: {
+      description:
+        "A detailed description of the MCP server and its capabilities used to provide hints to inference agent",
       command: "bunx",
       args: ["..."],
       prompt: getPrompt("someMcpServer.md"),
@@ -122,6 +126,8 @@ const config = {
   },
 }
 ```
+
+The `description` field is **critical**; it's used by the inference routing agent to determine when to invoke the server or subagent.
 
 #### Remote Prompts
 
@@ -235,8 +241,6 @@ When a user asks something like "Analyze partner churn", the routing agent will:
 1. Match the query to the `sales-partner-sentiment-agent` based on its description
 2. Automatically connect to the required `salesforce` MCP server
 3. Invoke the subagent with its specialized prompt and tools
-
-The `description` field is **critical**; it's used by the routing agent to determine when to invoke the subagent.
 
 **Note:** Subagents also support remote prompts via `getRemotePrompt`, allowing you to manage agent prompts dynamically from an API or database.
 
