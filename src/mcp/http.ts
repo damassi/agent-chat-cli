@@ -97,7 +97,7 @@ export const main = async () => {
       // Req / Res handlers
       await transport.handleRequest(req, res, req.body)
     } catch (error) {
-      console.error("[agent-chat-cli] Error handling MCP request:", error)
+      console.error("[agent-cli] Error handling MCP request:", error)
 
       if (!res.headersSent) {
         res.status(500).json({
@@ -167,7 +167,7 @@ export const main = async () => {
       await transport.handleRequest(req, res)
     } catch (error) {
       console.log(
-        "[agent-chat-cli] [/mcp DELETE] [ERROR] Error deleting session:",
+        "[agent-cli] [/mcp DELETE] [ERROR] Error deleting session:",
         error
       )
 
@@ -179,30 +179,28 @@ export const main = async () => {
 
   app.listen(PORT, () => {
     console.log(
-      `\n[agent-chat-cli] MCP HTTP Server running on port http://localhost:${PORT}\n`
+      `\n[agent-cli] MCP HTTP Server running on port http://localhost:${PORT}\n`
     )
   })
 
   process.on("SIGINT", async () => {
-    console.log("[agent-chat-cli] Shutting down server...")
+    console.log("[agent-cli] Shutting down server...")
 
     for (const sessionId in transports) {
       try {
-        console.log(
-          `[agent-chat-cli] Closing transport for session ${sessionId}`
-        )
+        console.log(`[agent-cli] Closing transport for session ${sessionId}`)
 
         await transports[sessionId]?.close()
         delete transports[sessionId]
       } catch (error) {
         console.error(
-          `[agent-chat-cli] Error closing transport for session ${sessionId}:`,
+          `[agent-cli] Error closing transport for session ${sessionId}:`,
           error
         )
       }
     }
 
-    console.log("[agent-chat-cli] Server shutdown complete.")
+    console.log("[agent-cli] Server shutdown complete.")
     process.exit(0)
   })
 }
@@ -210,6 +208,6 @@ export const main = async () => {
 try {
   main()
 } catch (error) {
-  console.error("[agent-chat-cli] Fatal error starting HTTP server:", error)
+  console.error("[agent-cli] Fatal error starting HTTP server:", error)
   process.exit(1)
 }

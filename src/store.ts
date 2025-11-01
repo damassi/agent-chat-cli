@@ -6,8 +6,10 @@ import {
   action,
   computed,
   createContextStore,
+  thunk,
   type Action,
   type Computed,
+  type Thunk,
 } from "easy-peasy"
 import type { AgentConfig } from "utils/createAgent"
 import { getEnabledMcpServers } from "utils/getEnabledMcpServers"
@@ -104,6 +106,7 @@ export interface StoreModel {
   setMcpServers: Action<StoreModel, McpServerStatus[]>
   setSessionId: Action<StoreModel, string>
   setStats: Action<StoreModel, string | null>
+  handleMcpServerStatus: Thunk<StoreModel, McpServerStatus[]>
 }
 
 export const AgentStore = createContextStore<StoreModel>({
@@ -214,5 +217,25 @@ export const AgentStore = createContextStore<StoreModel>({
 
   setAbortController: action((state, payload) => {
     state.abortController = payload
+  }),
+
+  handleMcpServerStatus: thunk((actions, mcpServers) => {
+    actions.setMcpServers(mcpServers)
+
+    if (mcpServers.length === 0) {
+      return
+    }
+
+    const failedServers = mcpServers
+      .filter((s) => s.status === "failed")
+      .map((s) => s.name)
+
+    if (failedServers.length > 0) {
+      actions.addChatHistoryEntry({
+        type: "message",
+        role: "system",
+        content: `[Error] Failed to connect to ${failedServers.join(", ")}`,
+      })
+    }
   }),
 })

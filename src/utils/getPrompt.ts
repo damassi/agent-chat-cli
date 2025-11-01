@@ -13,11 +13,17 @@ export const getPrompt = (filename: string) => {
   }
 }
 
-export const buildSystemPrompt = async (
-  config: AgentChatConfig,
+interface BuildSystemPromptProps {
+  config: AgentChatConfig
+  additionalSystemPrompt?: string
+  connectedServers?: Set<string>
+}
+
+export const buildSystemPrompt = async ({
+  config,
   additionalSystemPrompt = "",
-  connectedServers: Set<string> = new Set()
-): Promise<Options["systemPrompt"]> => {
+  connectedServers = new Set(),
+}: BuildSystemPromptProps): Promise<Options["systemPrompt"]> => {
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",

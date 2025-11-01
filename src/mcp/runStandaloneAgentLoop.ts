@@ -5,32 +5,32 @@ import { MessageQueue } from "utils/MessageQueue"
 import { contentTypes, messageTypes, runAgentLoop } from "utils/runAgentLoop"
 
 interface RunQueryOptions {
-  prompt: string
-  mcpServer: McpServer
-  sessionId?: string
   additionalSystemPrompt?: string
-  onSessionIdReceived?: (sessionId: string) => void
   existingConnectedServers?: Set<string>
+  mcpServer: McpServer
+  onSessionIdReceived?: (sessionId: string) => void
+  prompt: string
+  sessionId?: string
 }
 
 export const runStandaloneAgentLoop = async ({
-  prompt,
-  mcpServer,
-  sessionId,
   additionalSystemPrompt,
-  onSessionIdReceived,
   existingConnectedServers,
+  mcpServer,
+  onSessionIdReceived,
+  prompt,
+  sessionId,
 }: RunQueryOptions) => {
   const config = await loadConfig()
   const messageQueue = new MessageQueue()
   const streamEnabled = config.stream ?? false
 
   const { agentLoop, connectedServers } = await runAgentLoop({
+    additionalSystemPrompt,
+    config,
+    existingConnectedServers,
     messageQueue,
     sessionId,
-    config,
-    additionalSystemPrompt,
-    existingConnectedServers,
     onServerConnection: async (status) => {
       await mcpServer.sendLoggingMessage({
         level: "info",
@@ -160,7 +160,7 @@ export const runStandaloneAgentLoop = async ({
       }
     }
   } catch (error) {
-    console.error(`[agent-chat-cli] [runStandaloneAgentLoop] Error: ${error}`)
+    console.error(`[agent-cli] [runStandaloneAgentLoop] Error: ${error}`)
   }
 
   return {

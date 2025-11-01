@@ -16,9 +16,15 @@ const config: AgentChatConfig = {
   },
 
   mcpServers: {
+    chrome: {
+      description:
+        "The Chrome DevTools MCP server adds web browser automation and debugging capabilities to your AI agent",
+      command: "bunx",
+      args: ["chrome-devtools-mcp@latest"],
+    },
     github: {
       description:
-        "Artsy GitHub organization: search code, PRs, issues; discover documentation in repo docs/; find deployment guides and code examples.",
+        "GitHub MCP tools to search code, PRs, issues; discover documentation in repo docs/; find deployment guides and code examples.",
       prompt: getPrompt("github.md"),
       command: "bunx",
       args: [

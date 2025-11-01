@@ -30,7 +30,7 @@ describe("buildSystemPrompt", () => {
       mcpServers: {},
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("Current date:")
   })
@@ -40,7 +40,7 @@ describe("buildSystemPrompt", () => {
       mcpServers: {},
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("You are a helpful agent.")
   })
@@ -51,7 +51,7 @@ describe("buildSystemPrompt", () => {
       systemPrompt: async () => "You are a custom agent.",
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("You are a custom agent.")
     expect(prompt).not.toContain("You are a helpful agent.")
@@ -69,7 +69,7 @@ describe("buildSystemPrompt", () => {
       },
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("# github MCP Server")
     expect(prompt).toContain("GitHub server instructions")
@@ -93,7 +93,7 @@ describe("buildSystemPrompt", () => {
       },
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("# github MCP Server")
     expect(prompt).toContain("GitHub instructions")
@@ -118,7 +118,7 @@ describe("buildSystemPrompt", () => {
       },
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("# github MCP Server")
     expect(prompt).not.toContain("# gitlab MCP Server")
@@ -137,7 +137,7 @@ describe("buildSystemPrompt", () => {
       systemPrompt: async () => "Custom base prompt",
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("Current date:")
     expect(prompt).toContain("Custom base prompt")
@@ -151,7 +151,10 @@ describe("buildSystemPrompt", () => {
     }
     const connectedServers = new Set(["github", "gitlab"])
 
-    const prompt = await buildSystemPrompt(config, "", connectedServers)
+    const prompt = await buildSystemPrompt({
+      config,
+      connectedServers,
+    })
 
     expect(prompt).toContain("Connected MCP Servers")
     expect(prompt).toContain("github, gitlab")
@@ -163,7 +166,10 @@ describe("buildSystemPrompt", () => {
     }
     const connectedServers = new Set<string>()
 
-    const prompt = await buildSystemPrompt(config, "", connectedServers)
+    const prompt = await buildSystemPrompt({
+      config,
+      connectedServers,
+    })
 
     expect(prompt).toContain("Connected MCP Servers")
     expect(prompt).toContain(
@@ -176,7 +182,7 @@ describe("buildSystemPrompt", () => {
       mcpServers: {},
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("Connected MCP Servers")
     expect(prompt).toContain("Current date:")
@@ -202,7 +208,7 @@ describe("buildSystemPrompt", () => {
       },
     }
 
-    const prompt = await buildSystemPrompt(config)
+    const prompt = await buildSystemPrompt({ config })
 
     expect(prompt).toContain("# github MCP Server")
     expect(prompt).toContain("GitHub instructions")

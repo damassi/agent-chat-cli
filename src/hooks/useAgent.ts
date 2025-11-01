@@ -44,7 +44,7 @@ export function useAgent() {
             case message.type === messageTypes.SYSTEM &&
               message.subtype === messageTypes.INIT: {
               actions.setSessionId(message.session_id)
-              actions.setMcpServers(message.mcp_servers)
+              actions.handleMcpServerStatus(message.mcp_servers)
 
               continue
             }
@@ -117,33 +117,15 @@ export function useAgent() {
               }
 
               if (!message.is_error) {
-                // Extract cache and token information
-                const cacheReadTokens =
-                  message.usage.cache_read_input_tokens || 0
-                const cacheCreationTokens =
-                  message.usage.cache_creation_input_tokens || 0
-                const inputTokens = message.usage.input_tokens || 0
-
-                // In the Claude API, input_tokens appears to be only non-cached tokens
-                // Total input = regular input tokens + cache read tokens + cache creation tokens
-                const totalInputTokens =
-                  inputTokens + cacheReadTokens + cacheCreationTokens
-
-                // Calculate cache hit rate as percentage of total input that was served from cache
-                const cacheRate =
-                  totalInputTokens > 0
-                    ? ((cacheReadTokens / totalInputTokens) * 100).toFixed(1)
-                    : "0.0"
-
                 actions.setStats(
                   `Completed in ${(message.duration_ms / 1000).toFixed(
                     2
-                  )}s | Cost: $${message.total_cost_usd.toFixed(4)} | Cache: ${cacheRate}% | Turns: ${
+                  )}s | Cost: $${message.total_cost_usd.toFixed(4)} | Turns: ${
                     message.num_turns
                   }`
                 )
               } else {
-                actions.setStats(`[agent-chat-cli] Error: ${message.subtype}`)
+                actions.setStats(`[agent-cli] Error: ${message.subtype}`)
               }
               actions.setIsProcessing(false)
               break
@@ -155,7 +137,7 @@ export function useAgent() {
           error instanceof Error &&
           !error.message.includes("process aborted by user")
         ) {
-          actions.setStats(`[agent-chat-cli] ${error}`)
+          actions.setStats(`[agent-cli] ${error}`)
         }
 
         actions.setIsProcessing(false)

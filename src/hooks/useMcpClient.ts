@@ -9,8 +9,6 @@ import { useEffect } from "react"
 import { AgentStore } from "store"
 import config from "../../mcp-client.config"
 
-const CALL_TOOL_TIMEOUT = 600000 // 10 minutes
-
 export const useMcpClient = () => {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
   const actions = AgentStore.useStoreActions((actions) => actions)
@@ -56,7 +54,7 @@ export const useMcpClient = () => {
                     input: data.input as Record<string, unknown>,
                   })
                 } else if (data.type === "mcp_servers") {
-                  actions.setMcpServers(data.servers)
+                  actions.handleMcpServerStatus(data.servers)
                 } else if (data.type === "system_message") {
                   actions.addChatHistoryEntry({
                     type: "message",
@@ -93,7 +91,7 @@ export const useMcpClient = () => {
 
               default: {
                 throw new Error(
-                  `[agent-chat-cli] Unsupported transport: ${config.transport}`
+                  `[agent-cli] Unsupported transport: ${config.transport}`
                 )
               }
             }
@@ -103,14 +101,11 @@ export const useMcpClient = () => {
 
         await client.connect(transport)
         await client.setLoggingLevel("debug")
-        await client.callTool(
-          {
-            name: "get_agent_status",
-            arguments: {},
-          },
-          undefined,
-          { timeout: CALL_TOOL_TIMEOUT }
-        )
+
+        await client.callTool({
+          name: "get_agent_status",
+          arguments: {},
+        })
 
         while (true) {
           const userMessage = await messageQueue.waitForMessage()
@@ -126,16 +121,12 @@ export const useMcpClient = () => {
           try {
             const startTime = Date.now()
 
-            await client.callTool(
-              {
-                name: "ask_agent",
-                arguments: {
-                  query: userMessage,
-                },
+            await client.callTool({
+              name: "ask_agent",
+              arguments: {
+                query: userMessage,
               },
-              undefined,
-              { timeout: CALL_TOOL_TIMEOUT }
-            )
+            })
 
             const duration = Date.now() - startTime
 
@@ -147,14 +138,14 @@ export const useMcpClient = () => {
             actions.setIsProcessing(false)
           } catch (error) {
             actions.setStats(
-              `[agent-chat-cli] Error: ${error instanceof Error ? error.message : String(error)}`
+              `[agent-cli] Error: ${error instanceof Error ? error.message : String(error)}`
             )
             actions.setIsProcessing(false)
           }
         }
       } catch (error) {
         actions.setStats(
-          `[agent-chat-cli] Client error: ${error instanceof Error ? error.message : String(error)}`
+          `[agent-cli] Client error: ${error instanceof Error ? error.message : String(error)}`
         )
         actions.setIsProcessing(false)
       }

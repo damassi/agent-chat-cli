@@ -18,5 +18,5 @@ const main = () => {
 try {
   main()
 } catch (error) {
-  console.error("[agent-chat-cli] [ERROR]:", error)
+  console.error("[agent-cli] [ERROR]:", error)
 }

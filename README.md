@@ -16,7 +16,7 @@ The agent, including MCP server setup, is configured in [agent-chat-cli.config.t
 
 The MCP _client_ is configured in [mcp-client.config.ts](mcp-client.config.ts).
 
-https://github.com/user-attachments/assets/20d77095-2ced-4bc2-b416-8545ace53a4f
+https://github.com/user-attachments/assets/f9a82631-ee26-4a7b-9d89-a732d2605513
 
 ### Why?
 
@@ -57,9 +57,10 @@ See the config above for an example.
 
 For demonstration purposes, Agent is configured with the following MCP servers:
 
-- **Github**: https://github.com/github/github-mcp-server
+- **Chrome DevTools MCP**: https://developer.chrome.com/blog/chrome-devtools-mcp
+- **Github MCP**: https://github.com/github/github-mcp-server
   - [Generate a Github PAT token](https://github.com/settings/personal-access-tokens)
-- **Notion**: https://developers.notion.com/docs/mcp
+- **Notion MCP**: https://developers.notion.com/docs/mcp
   - Authenticate via OAuth, which will launch a browser when attempting to connect
 
 **Note**: OAuth-based MCP servers (Notion, JIRA, etc) require browser-based authentication and cannot be deployed remotely. These servers are only accessible in the CLI version of the agent.

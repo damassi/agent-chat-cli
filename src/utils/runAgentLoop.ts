@@ -24,26 +24,26 @@ export const contentTypes = {
 
 export interface RunAgentLoopOptions {
   abortControllerRef?: { current: AbortController | undefined }
-  config: AgentChatConfig
-  messageQueue: MessageQueue
-  sessionId?: string
   additionalSystemPrompt?: string
-  onToolPermissionRequest?: (toolName: string, input: any) => void
-  onServerConnection?: (status: string) => void
-  setIsProcessing?: (value: boolean) => void
+  config: AgentChatConfig
   existingConnectedServers?: Set<string>
+  messageQueue: MessageQueue
+  onServerConnection?: (status: string) => void
+  onToolPermissionRequest?: (toolName: string, input: any) => void
+  sessionId?: string
+  setIsProcessing?: (value: boolean) => void
 }
 
 export const runAgentLoop = async ({
   abortControllerRef,
-  config,
-  messageQueue,
-  onToolPermissionRequest,
-  onServerConnection,
-  sessionId: initialSessionId,
   additionalSystemPrompt,
-  setIsProcessing,
+  config,
   existingConnectedServers,
+  messageQueue,
+  onServerConnection,
+  onToolPermissionRequest,
+  sessionId: initialSessionId,
+  setIsProcessing,
 }: RunAgentLoopOptions) => {
   const canUseTool = createCanUseTool({
     messageQueue,
@@ -71,25 +71,22 @@ export const runAgentLoop = async ({
         continue
       }
 
-      const getSystemPrompt = async () => {
-        return await buildSystemPrompt(
-          config,
-          additionalSystemPrompt,
-          connectedServers
-        )
-      }
-
-      const { mcpServers } = await selectMcpServers({
-        userMessage,
-        enabledMcpServers,
-        agents: config.agents,
-        alreadyConnectedServers: connectedServers,
-        sessionId: currentSessionId,
-        abortController: abortControllerRef?.current,
-        onServerConnection,
+      const systemPrompt = await buildSystemPrompt({
+        config,
+        additionalSystemPrompt,
+        connectedServers,
       })
 
-      const systemPrompt = await getSystemPrompt()
+      const { mcpServers } = await selectMcpServers({
+        abortController: abortControllerRef?.current,
+        agents: config.agents,
+        alreadyConnectedServers: connectedServers,
+        enabledMcpServers,
+        onServerConnection,
+        sessionId: currentSessionId,
+        userMessage,
+      })
+
       const agents = await createSDKAgents(config.agents)
 
       try {
@@ -139,7 +136,7 @@ export const runAgentLoop = async ({
           }
         }
       } catch (error) {
-        console.log("[ERROR] [runAgentLoop] Query aborted or failed:", error)
+        log("[ERROR] [runAgentLoop] Query aborted or failed:", error)
 
         // Continue to next message
       }

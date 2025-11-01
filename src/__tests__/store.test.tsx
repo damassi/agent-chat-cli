@@ -80,6 +80,7 @@ describe("Store", () => {
           "setMcpServers",
           "setSessionId",
           "setStats",
+          "handleMcpServerStatus",
         ])
       )
     })
@@ -412,6 +413,91 @@ describe("Store", () => {
       expect(getState().currentToolUses).toEqual([])
       expect(getState().input).toBe("")
       expect(getState().stats).toBeNull()
+    })
+  })
+
+  describe("handleMcpServerStatus thunk", () => {
+    test("should set mcp servers", () => {
+      const { getState, actions } = setup()
+
+      const servers: McpServerStatus[] = [
+        { name: "github", status: "connected" },
+        { name: "notion", status: "connected" },
+      ]
+
+      actions.handleMcpServerStatus(servers)
+
+      expect(getState().mcpServers).toEqual(servers)
+    })
+
+    test("should add error message for failed servers", () => {
+      const { getState, actions } = setup()
+
+      const servers: McpServerStatus[] = [
+        { name: "github", status: "connected" },
+        { name: "postgres", status: "failed" },
+        { name: "redis", status: "failed" },
+      ]
+
+      actions.handleMcpServerStatus(servers)
+
+      const chatHistory = getState().chatHistory
+      const errorMessage = chatHistory.find(
+        (entry) =>
+          entry.type === "message" &&
+          entry.role === "system" &&
+          "content" in entry &&
+          entry.content.includes("Failed to connect")
+      )
+
+      expect(errorMessage).toBeDefined()
+      expect(errorMessage?.type).toBe("message")
+      if (errorMessage?.type === "message") {
+        expect(errorMessage.content).toBe(
+          "[Error] Failed to connect to postgres, redis"
+        )
+      }
+    })
+
+    test("should not add any messages when all servers connect successfully", () => {
+      const { getState, actions } = setup()
+
+      const servers: McpServerStatus[] = [
+        { name: "github", status: "connected" },
+        { name: "notion", status: "connected" },
+      ]
+
+      actions.handleMcpServerStatus(servers)
+
+      const chatHistory = getState().chatHistory
+      expect(chatHistory.length).toBe(0)
+    })
+
+    test("should not add message when no servers provided", () => {
+      const { getState, actions } = setup()
+
+      actions.handleMcpServerStatus([])
+
+      const chatHistory = getState().chatHistory
+      expect(chatHistory.length).toBe(0)
+    })
+
+    test("should handle only failed servers", () => {
+      const { getState, actions } = setup()
+
+      const servers: McpServerStatus[] = [
+        { name: "postgres", status: "failed" },
+      ]
+
+      actions.handleMcpServerStatus(servers)
+
+      const chatHistory = getState().chatHistory
+      expect(chatHistory.length).toBe(1)
+      expect(chatHistory[0]).toEqual({
+        type: "message",
+        role: "system",
+        content: "[Error] Failed to connect to postgres",
+      })
     })
   })
 })

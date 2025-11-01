@@ -10,23 +10,23 @@ import { z } from "zod"
 import { messageTypes } from "./runAgentLoop"
 
 interface SelectMcpServersOptions {
-  userMessage: string
-  enabledMcpServers: Record<string, any> | undefined
+  abortController?: AbortController
   agents?: Record<string, AgentConfig>
   alreadyConnectedServers?: Set<string>
-  sessionId?: string
-  abortController?: AbortController
+  enabledMcpServers: Record<string, any> | undefined
   onServerConnection?: (status: string) => void
+  sessionId?: string
+  userMessage: string
 }
 
 export const selectMcpServers = async ({
-  userMessage,
-  enabledMcpServers,
+  abortController,
   agents,
   alreadyConnectedServers = new Set(),
-  sessionId,
-  abortController,
+  enabledMcpServers,
   onServerConnection,
+  sessionId,
+  userMessage,
 }: SelectMcpServersOptions) => {
   if (!enabledMcpServers) {
     return { mcpServers: undefined, newServers: [] }
@@ -62,8 +62,7 @@ export const selectMcpServers = async ({
   let selectedServers: string[] = []
 
   /**
-   * Create a custom MCP server tool. This is how we can achieve true structured
-   * outputs, and keep the MCP server on the rails.
+   * Create a custom MCP server tool.
    */
   const selectionServer = createSdkMcpServer({
     name: "mcp-router",
@@ -81,6 +80,7 @@ export const selectMcpServers = async ({
         },
         async (args) => {
           selectedServers = args.servers.map((s) => s.trim())
+
           return {
             content: [
               {
