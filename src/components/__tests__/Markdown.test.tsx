@@ -90,4 +90,23 @@ describe("Markdown", () => {
     expect(lastFrame()).toContain("italic")
     expect(lastFrame()).toContain("code")
   })
+
+  test("should render nested lists", () => {
+    const markdown = `1. **Configure AWS credentials** using one of these methods:
+   - Set the AWS_PROFILE environment variable
+   - Run aws sso login --profile <your-profile>
+   - Ensure credentials are in ~/.aws/credentials
+
+2. **Verify IAM permissions** - Your credentials need:
+   - redshift:DescribeClusters
+   - redshift-data:ExecuteStatement`
+
+    const { lastFrame } = render(<Markdown>{markdown}</Markdown>)
+
+    expect(lastFrame()).toContain("Configure AWS credentials")
+    expect(lastFrame()).toContain("Set the AWS_PROFILE")
+    expect(lastFrame()).toContain("Run aws sso login")
+    expect(lastFrame()).toContain("Verify IAM permissions")
+    expect(lastFrame()).toContain("redshift:DescribeClusters")
+  })
 })

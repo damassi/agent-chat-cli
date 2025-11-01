@@ -1,6 +1,10 @@
-# Agent Chat CLI
+# Agent Chat Cli
 
-A bare-bones, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
+A minimalist, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview) and based on [damassi/agent-chat-cli](https://github.com/damassi/agent-chat-cli). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
+
+Additionally, via inference, Agent Chat CLI supports lazy, turn-based MCP connections to keep token costs down. The agent will only use those MCP servers you ask about, limiting the context that is sent up to the LLM. (After an MCP server is connected it remains connected, however.)
+
+## Overview
 
 The app has three modes:
 
@@ -12,7 +16,7 @@ The agent, including MCP server setup, is configured in [agent-chat-cli.config.t
 
 The MCP _client_ is configured in [mcp-client.config.ts](mcp-client.config.ts).
 
-https://github.com/user-attachments/assets/c2026c47-c798-4a1d-a68a-54e4abe73c63
+https://github.com/user-attachments/assets/20d77095-2ced-4bc2-b416-8545ace53a4f
 
 ### Why?
 
@@ -49,6 +53,17 @@ OAuth support works out of the box via `mcp-remote`:
 
 See the config above for an example.
 
+### Example MCP Servers
+
+For demonstration purposes, Agent is configured with the following MCP servers:
+
+- **Github**: https://github.com/github/github-mcp-server
+  - [Generate a Github PAT token](https://github.com/settings/personal-access-tokens)
+- **Notion**: https://developers.notion.com/docs/mcp
+  - Authenticate via OAuth, which will launch a browser when attempting to connect
+
+**Note**: OAuth-based MCP servers (Notion, JIRA, etc) require browser-based authentication and cannot be deployed remotely. These servers are only accessible in the CLI version of the agent.
+
 ### Usage
 
 #### Interactive Agent Mode
@@ -80,11 +95,11 @@ Configure the MCP server connection in `mcp-client.config.ts`. HTTP is also supp
 Run as a stand-alone MCP server, using one of two modes:
 
 ```bash
-bun server
-bun server:http
+bun server:http # streaming HTTP (use this for deployments)
+bun server # stdio
 ```
 
-The server exposes an `ask_agent` tool that other MCP clients can use to interact with the agent. The agent has access to all configured MCP servers and can use their tools.
+The MCP server exposes an `ask_agent` and `ask_agent_slackbot` tools that other MCP clients can use to interact with the agent. The agent has access to all configured MCP servers and can use their tools.
 
 ### Configuration
 
@@ -96,10 +111,10 @@ To add specific instructions for each MCP server, create a markdown file in `src
 
 ```ts
 const config = {
-  systemPrompt: "You are a helpful agent."
+  systemPrompt: getPrompt("system.md"),
   mcpServers: {
     someMcpServer: {
-      command: "npx",
+      command: "bunx",
       args: ["..."],
       prompt: getPrompt("someMcpServer.md"),
     },
@@ -107,20 +122,130 @@ const config = {
 }
 ```
 
-#### Denying Tools
+#### Remote Prompts
 
-You can prevent specific MCP tools from being used by adding a `denyTools` array to your server configuration:
+Prompts can be loaded from remote sources (e.g., APIs) using `getRemotePrompt`. This enables dynamic prompt management where prompts are stored in a database or CMS rather than in files.
+
+Both `getPrompt` (for local files) and `getRemotePrompt` (for API calls) return lazy functions that are only evaluated when the agent needs them, ensuring prompts are fetched on-demand during each LLM turn, enabling iteration in real time.
+
+```ts
+import { getRemotePrompt } from "./src/utils/getRemotePrompt"
+
+const config = {
+  systemPrompt: getRemotePrompt(),
+  mcpServers: {
+    someMcpServer: {
+      command: "bunx",
+      args: ["..."],
+      prompt: getRemotePrompt({
+        fetchPrompt: async () => {
+          const response = await fetch("https://some-prompt/name")
+
+          if (!response.ok) {
+            throw new Error(
+              `[agent] [getRemotePrompt] [ERROR HTTP] status: ${response.status}`
+            )
+          }
+
+          const text = await response.text()
+          return text
+        },
+      }),
+    },
+  },
+}
+```
+
+You can also provide a fallback to a local file if the remote fetch fails:
 
 ```ts
 const config = {
   mcpServers: {
     github: {
-      command: "npx",
+      prompt: getRemotePrompt({
+        fallback: "github.md"
+        fetchPrompt: ...
+      }),
+    },
+  },
+}
+```
+
+#### Denying Tools
+
+You can limit what tools the claude-agent-sdk has access to by adding a `disallowedTools` config:
+
+```ts
+const config = {
+  disallowedTools: ["Bash"],
+}
+```
+
+You can also prevent specific MCP tools from being used by adding a `disallowedTools` array to your server configuration:
+
+```ts
+const config = {
+  mcpServers: {
+    github: {
+      command: "bunx",
       args: ["..."],
-      denyTools: ["delete_repository", "update_secrets"],
+      disallowedTools: ["delete_repository", "update_secrets"],
     },
   },
 }
 ```
 
 Denied tools are filtered at the SDK level and won't be available to the agent.
+
+In CLI mode, if `permissionMode` is set to "ask" then a prompt will appear to confirm when tools need to be invoked.
+
+### Specialized Subagents
+
+You can define specialized subagents in `agent-chat-cli.config.ts` to handle domain-specific tasks, leveraging the powerful [Claude Subagent SDK](https://docs.claude.com/en/docs/claude-code/sub-agents). Subagents are automatically invoked when user queries match their domain, and they have access to specific MCP servers.
+
+#### Example
+
+```ts
+import { createAgent } from "./src/utils/createAgent"
+import { getPrompt } from "./src/utils/getPrompt"
+
+const config = {
+  agents: {
+    "sales-partner-sentiment-agent": createAgent({
+      description:
+        "An expert SalesForce partner sentiment agent, designed to produce insights for renewal and churn conversations",
+      prompt: getPrompt("agents/sales-partner-sentiment-agent.md"),
+      mcpServers: ["salesforce"],
+    }),
+  },
+  mcpServers: {
+    salesforce: {
+      description: "Salesforce CRM: leads, opportunities, accounts...",
+      command: "bunx",
+      args: ["-y", "@tsmztech/mcp-server-salesforce@0.0.3"],
+      enabled: true,
+    },
+  },
+}
+```
+
+When a user asks something like "Analyze partner churn", the routing agent will:
+
+1. Match the query to the `sales-partner-sentiment-agent` based on its description
+2. Automatically connect to the required `salesforce` MCP server
+3. Invoke the subagent with its specialized prompt and tools
+
+The `description` field is **critical**; it's used by the routing agent to determine when to invoke the subagent.
+
+**Note:** Subagents also support remote prompts via `getRemotePrompt`, allowing you to manage agent prompts dynamically from an API or database.
+
+### Note on Lazy MCP Server Initialization
+
+In order to keep LLM costs low and response times quick, a specialized sub-agent sits in front of user queries to infer which MCP servers are needed; the result is then forwarded on to the main agent, lazily initializing required MCP servers. Without this, we would need to initialize _all_ MCP servers defined in the config upfront, and for every query that we send to Anthropic, we'd _also_ be sending along a huge system prompt, and this is very expensive!
+
+#### The Flow
+
+- User sends a message, something like "In Salesforce, tell me about some recent leads"
+- Sub-agent forwards message onto Anthropic's light-weight Haiku model and asks which MCP servers seem to be necessary
+- Returns result as JSON, and based on the result, mcpServers are passed to the main agent query
+- Agent now boots quickly and responds in a timely way, vs having to wait for every MCP server to initialize before being able to chat

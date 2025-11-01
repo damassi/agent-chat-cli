@@ -1,5 +1,3 @@
----
-
 Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
@@ -17,7 +15,12 @@ Default to using Bun instead of Node.js.
 - Prefer named exports vs default exports
 - Prefer try/catch over vanilla promises
 - If a function has two or more arguments, use an object. And use an interface, vs adding types inline.
-- Never use implicit returns in react components. They should ONLY be used in one-liners.-
+- Never use implicit returns in react components. They should ONLY be used in one-liners.
+
+## Common Developer Commands
+
+- `bun test`
+- `bun type-check`
 
 ## APIs
 

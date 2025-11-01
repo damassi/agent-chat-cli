@@ -48,7 +48,7 @@ describe("Store", () => {
       expect(getState().sessionId).toBeUndefined()
       expect(getState().stats).toBeUndefined()
       expect(getState().pendingToolPermission).toBeUndefined()
-      expect(getState().abortController).toBeUndefined()
+      expect(getState().abortController).toBeInstanceOf(AbortController)
     })
 
     test("should have MessageQueue instance", () => {
@@ -73,7 +73,7 @@ describe("Store", () => {
           "setPendingToolPermission",
           "setAbortController",
           "setConfig",
-          "setcurrentAssistantMessage",
+          "setCurrentAssistantMessage",
           "setCurrentToolUses",
           "setInput",
           "setIsProcessing",
@@ -143,10 +143,10 @@ describe("Store", () => {
   })
 
   describe("assistant message actions", () => {
-    test("setcurrentAssistantMessage should set message", () => {
+    test("setCurrentAssistantMessage should set message", () => {
       const { getState, actions } = setup()
 
-      actions.setcurrentAssistantMessage("Hello")
+      actions.setCurrentAssistantMessage("Hello")
 
       expect(getState().currentAssistantMessage).toBe("Hello")
     })
@@ -154,7 +154,7 @@ describe("Store", () => {
     test("appendCurrentAssistantMessage should append to current message", () => {
       const { getState, actions } = setup()
 
-      actions.setcurrentAssistantMessage("Hello")
+      actions.setCurrentAssistantMessage("Hello")
       actions.appendCurrentAssistantMessage(" world")
 
       expect(getState().currentAssistantMessage).toBe("Hello world")
@@ -163,7 +163,7 @@ describe("Store", () => {
     test("clearCurrentAssistantMessage should clear message", () => {
       const { getState, actions } = setup()
 
-      actions.setcurrentAssistantMessage("Hello")
+      actions.setCurrentAssistantMessage("Hello")
       actions.clearCurrentAssistantMessage()
 
       expect(getState().currentAssistantMessage).toBe("")
@@ -397,7 +397,7 @@ describe("Store", () => {
         role: "user",
         content: "Hello",
       })
-      actions.setcurrentAssistantMessage("Assistant message")
+      actions.setCurrentAssistantMessage("Assistant message")
       actions.addToolUse({
         type: "tool_use",
         name: "tool",

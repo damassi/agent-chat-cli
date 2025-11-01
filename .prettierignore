@@ -1,0 +1,6 @@
+hokusai/
+node_modules/
+dist/
+*.env
+*.env.example
+.prettierignore

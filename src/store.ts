@@ -9,6 +9,8 @@ import {
   type Action,
   type Computed,
 } from "easy-peasy"
+import type { AgentConfig } from "utils/createAgent"
+import { getEnabledMcpServers } from "utils/getEnabledMcpServers"
 import { MessageQueue } from "utils/MessageQueue"
 
 export interface Message {
@@ -37,18 +39,23 @@ export interface ToolDenied {
 export type ChatHistoryEntry = Message | ToolUse | ToolDenied
 
 type McpServerConfigWithPrompt = McpServerConfig & {
-  prompt?: string
-  denyTools?: string[]
+  description: string
+  prompt?: () => Promise<string>
+  disallowedTools?: string[]
+  enabled?: boolean
 }
 
 export interface AgentChatConfig {
+  agents?: Record<string, AgentConfig>
+  disallowedTools?: string[]
   connectionTimeout?: number
   maxRetries?: number
   mcpServers: Record<string, McpServerConfigWithPrompt>
+  model?: "sonnet" | "haiku"
   permissionMode?: PermissionMode
   retryDelay?: number
   stream?: boolean
-  systemPrompt?: string
+  systemPrompt?: () => Promise<string>
 }
 
 export interface PendingToolPermission {
@@ -72,6 +79,8 @@ export interface StoreModel {
 
   // Computed
   isBooted: Computed<StoreModel, boolean>
+  availableMcpServers: Computed<StoreModel, string[]>
+  availableAgents: Computed<StoreModel, string[]>
 
   // Actions
   abortRequest: Action<StoreModel>
@@ -88,7 +97,7 @@ export interface StoreModel {
   >
   setAbortController: Action<StoreModel, AbortController | undefined>
   setConfig: Action<StoreModel, AgentChatConfig>
-  setcurrentAssistantMessage: Action<StoreModel, string>
+  setCurrentAssistantMessage: Action<StoreModel, string>
   setCurrentToolUses: Action<StoreModel, ToolUse[]>
   setInput: Action<StoreModel, string>
   setIsProcessing: Action<StoreModel, boolean>
@@ -98,7 +107,7 @@ export interface StoreModel {
 }
 
 export const AgentStore = createContextStore<StoreModel>({
-  abortController: undefined,
+  abortController: new AbortController(),
   chatHistory: [],
   messageQueue: new MessageQueue(),
   sessionId: undefined,
@@ -116,9 +125,19 @@ export const AgentStore = createContextStore<StoreModel>({
     return !!state.config
   }),
 
+  availableMcpServers: computed((state) => {
+    const enabled = getEnabledMcpServers(state.config?.mcpServers)
+    return enabled ? Object.keys(enabled) : []
+  }),
+
+  availableAgents: computed((state) => {
+    return state.config?.agents ? Object.keys(state.config.agents) : []
+  }),
+
   // Actions
   abortRequest: action((state) => {
     state.abortController?.abort()
+    state.abortController = new AbortController()
     state.isProcessing = false
   }),
 
@@ -149,7 +168,7 @@ export const AgentStore = createContextStore<StoreModel>({
     state.isProcessing = payload
   }),
 
-  setcurrentAssistantMessage: action((state, payload) => {
+  setCurrentAssistantMessage: action((state, payload) => {
     state.currentAssistantMessage = payload
   }),
 

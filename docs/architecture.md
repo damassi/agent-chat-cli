@@ -39,21 +39,29 @@
 
 #### Agent Integration
 
-- [src/utils/runAgentLoop.ts](../src/utils/runAgentLoop.ts) - Shared agent logic:
-  - `runAgentLoop()` - Creates agent query with configuration
-  - `startConversation()` - Async generator for message queue
+- [src/utils/runAgentLoop.ts](../src/utils/runAgentLoop.ts) - Resume-based agent loop:
+  - `runAgentLoop()` - Async function that returns a conversation generator
+  - Implements turn-by-turn query loop with dynamic MCP server selection
+  - Maintains `connectedServers` Set across turns
+  - Uses SDK's `resume` to preserve conversation history
+  - Yields messages from each turn's query
   - `messageTypes` - Constants for message type checking
 - [src/hooks/useAgent.ts](../src/hooks/useAgent.ts) - React hook for interactive agent mode:
-  - Uses shared agent logic
-  - Manages the agent SDK query loop
+  - Calls `runAgentLoop()` and processes the conversation generator
   - Handles streaming responses
   - Processes tool uses
   - Tracks session state
+  - Manages server connection notifications via `onServerConnection` callback
   - Updates UI store
 - [src/hooks/useMcpClient.ts](../src/hooks/useMcpClient.ts) - React hook for MCP client mode:
   - Connects to an MCP server via stdio/HTTP/SSE
-  - Calls `ask_agent` tool on the server
-  - Displays tool uses via logging notifications
+  - Calls `get_agent_status` on initialization to fetch available servers
+  - Calls `ask_agent` tool with 10-minute timeout for user queries
+  - Handles logging notifications:
+    - `system_message`: Server connection status
+    - `text_message`: Streaming responses
+    - `tool_use`: Tool invocations
+  - Accumulates response text and properly clears between queries
   - Updates UI store with responses
   - Configured via `mcp-client.config.ts`
 
@@ -92,22 +100,123 @@ Configurable streaming responses via `config.stream`.
 The CLI can connect to external MCP servers as a client:
 
 - Multiple MCP servers can be configured
-- Per-server custom system prompts
+- Per-server custom system prompts and descriptions
 - Server status tracking
 - Tool use from any connected server
 - Configured via `mcpServers` in config file
 
+#### Dynamic MCP Server Selection
+
+The agent uses an intelligent routing system to load MCP servers on-demand instead of connecting to all servers upfront:
+
+**Key Components:**
+
+- [src/utils/mcpServerSelectionAgent.ts](../src/utils/mcpServerSelectionAgent.ts) - MCP server routing agent
+  - Uses Claude Agent SDK's custom tool system (`createSdkMcpServer`)
+  - Defines `select_mcp_servers` tool with Zod schema for structured output
+  - Analyzes user message + server descriptions to determine needed servers
+  - Case-insensitive server name matching
+  - Tracks already-connected servers to avoid redundant connections
+  - Returns both accumulated servers and newly selected servers
+
+- [src/utils/getEnabledMcpServers.ts](../src/utils/getEnabledMcpServers.ts) - Server filtering utility
+  - Filters MCP servers where `enabled !== false`
+  - Shared by `runAgentLoop` and store's computed properties
+
+- [src/utils/logger.ts](../src/utils/logger.ts) - Logging configuration
+  - Exports `enableLogging` constant based on `ENABLE_LOGGING` env var
+  - Centralized logging control for all routing logs
+
+**Configuration:**
+
+Each MCP server in `agent-chat-cli.config.ts` includes:
+
+```typescript
+{
+  description: string  // Used by routing agent for intelligent matching
+  enabled: boolean     // Filter servers before routing
+  prompt?: string      // Optional system prompt
+  // ... other config
+}
+```
+
+**Resume-Based Conversation Loop:**
+
+Instead of running one continuous `query()`, the agent runs a loop where each user message:
+
+1. Waits for user input from message queue
+2. Calls `selectMcpServers()` with:
+   - Current user message
+   - Enabled MCP servers list
+   - Set of already-connected servers
+3. Routing agent uses custom tool to return needed servers
+4. New servers are accumulated into `connectedServers` Set
+5. `query()` runs with:
+   - `resume: sessionId` (preserves conversation history)
+   - `mcpServers`: all accumulated servers
+6. Processes messages until RESULT, then loops back
+
+**Server Accumulation:**
+
+Servers persist across conversation turns:
+
+- Turn 1: User mentions "github" → Connects to `[github]`
+- Turn 2: User mentions "sentry" → Connects to `[github, sentry]`
+- Turn 3: User mentions "notion" → Connects to `[github, sentry, notion]`
+
+The SDK's `resume` functionality maintains full conversation context while servers are dynamically added.
+
+**User Notifications:**
+
+System messages appear in chat when new servers connect:
+
+```
+[system] Connecting to github...
+[system] Connecting to notion, salesforce...
+```
+
+**Routing Intelligence:**
+
+The routing agent matches servers based on:
+
+- Explicit mentions: "using github" → github
+- Capability inference: "show me docs on OKRs" → notion
+- Multiple servers: "query sales data" → redshift, salesforce
+- No match: "what's the weather?" → no servers
+
 #### MCP Client Flow
 
-1. MCP client calls `query_agent` tool with prompt
+**Initialization:**
+
+1. MCP client connects to server via stdio/HTTP/SSE transport
+2. Client calls `get_agent_status` tool on initialization
+3. Server's `getAgentStatus()` runs `runAgentLoop()` to get available MCP servers
+4. Available servers list sent to client and displayed in header
+
+**User Query Flow:**
+
+1. User sends message → client calls `ask_agent` tool with query
 2. Zod validates input schema
-3. `runQuery()` creates a message queue
-4. `runAgentLoop()` initializes agent with shared logic
-5. Prompt is resolved into the message queue
-6. Agent processes via async generator
-7. Response messages are collected
-8. Session state persists for follow-up queries
-9. Final text response returned to MCP client
+3. `runStandaloneAgentLoop()` creates message queue and calls `runAgentLoop()`
+4. **Dynamic Server Selection** (same as interactive mode):
+   - User message triggers `selectMcpServers()` routing agent
+   - Routing agent analyzes message against server descriptions
+   - New servers accumulated into Set across conversation turns
+   - System message notification sent via `onServerConnection` callback
+5. Server emits logging notifications for:
+   - `system_message`: Server connection status (`[system] Connecting to...`)
+   - `text_message`: Streaming assistant responses
+   - `tool_use`: Tool invocations with parameters
+6. Client receives notifications and updates UI in real-time
+7. Session state persists for follow-up queries
+8. Final text response returned to MCP client
+
+**Key Implementation Details:**
+
+- `runStandaloneAgentLoop()` passes `onServerConnection` callback to `runAgentLoop()`
+- Server connection notifications sent as MCP logging messages
+- Client accumulates response text from `text_message` notifications
+- Response properly added to chat history and display cleared between queries
 
 #### MCP Server Mode
 
@@ -115,15 +224,21 @@ The CLI can also run as an MCP server itself, exposing the agent as a tool to ot
 
 **Shared MCP Infrastructure:**
 
-- [src/mcp/utils/getServer.ts](../src/mcp/utils/getServer.ts) - MCP server factory
+- [src/mcp/utils/getMcpServer.ts](../src/mcp/utils/getMcpServer.ts) - MCP server factory
   - Creates `McpServer` instance
-  - Registers `query_agent` tool with Zod validation
+  - Registers `ask_agent` tool with Zod validation
+  - Registers `get_agent_status` tool for initialization
   - Shared by both stdio and HTTP modes
-- [src/mcp/utils/runQuery.ts](../src/mcp/utils/runQuery.ts) - Query execution
+- [src/mcp/utils/runStandaloneAgentLoop.ts](../src/mcp/utils/runStandaloneAgentLoop.ts) - Query execution
   - Uses shared `runAgentLoop()` from agent integration
   - Manages message queue and session state
-  - Processes streaming responses
+  - Processes streaming responses with logging notifications
+  - Implements `onServerConnection` callback for dynamic server selection
   - Returns final text response
+- [src/mcp/utils/getAgentStatus.ts](../src/mcp/utils/getAgentStatus.ts) - Status utility
+  - Initializes agent to get available MCP servers
+  - Called by `get_agent_status` tool on client initialization
+  - Returns session ID and MCP servers list
 
 **Transport Implementations:**
 
@@ -176,22 +291,44 @@ The CLI can also run as an MCP server itself, exposing the agent as a tool to ot
 
 1. User submits input via TextInput
 2. Input added to chat history and message queue
-3. `useAgent` hook processes queue via async generator
-4. Agent SDK processes message with MCP servers
-5. Streaming events update current assistant message
-6. Tool uses are tracked and displayed separately
-7. Final result includes stats (cost, duration, turns)
-8. UI updates reactively via easy-peasy store
+3. `runAgentLoop` waits for message from queue
+4. `selectMcpServers()` routing agent determines needed servers:
+   - Analyzes user message against server descriptions
+   - Returns servers to connect (case-insensitive matching)
+   - Tracks already-connected servers
+5. New servers added to accumulated `connectedServers` Set
+6. System message shown: "[system] Connecting to server1, server2..."
+7. Agent SDK `query()` runs with:
+   - Resume session ID (preserves history)
+   - All accumulated MCP servers
+8. Streaming events update current assistant message
+9. Tool uses are tracked and displayed separately
+10. Final RESULT message includes stats (cost, duration, turns)
+11. Loop returns to step 3 for next user message
+12. UI updates reactively via easy-peasy store
 
 #### MCP Client Mode
 
-1. User submits input via TextInput
-2. Input added to chat history and message queue
-3. `useMcpClient` hook sends to MCP server's `ask_agent` tool
-4. Server emits logging notifications for tool uses
-5. Client receives and displays tool uses in real-time
-6. Final response text added to chat history
-7. UI updates reactively via easy-peasy store
+1. **Initialization:** Client calls `get_agent_status` to fetch available MCP servers
+2. User submits input via TextInput
+3. Input added to chat history and message queue
+4. `useMcpClient` hook sends to MCP server's `ask_agent` tool with 10-minute timeout
+5. **Server-side Dynamic Selection:** Server runs same routing logic as interactive mode:
+   - `selectMcpServers()` analyzes message against server descriptions
+   - New servers accumulated into Set across turns
+   - Session preserved via `resume` for conversation continuity
+6. Server emits logging notifications in real-time:
+   - `system_message`: Server connections (`[system] Connecting to...`)
+   - `text_message`: Streaming assistant responses
+   - `tool_use`: Tool invocations with parameters
+7. Client receives notifications and updates UI:
+   - System messages added to chat history
+   - Text messages displayed via `currentAssistantMessage`
+   - Tool uses shown separately
+8. After `ask_agent` completes:
+   - Accumulated response text added to chat history
+   - Display cleared for next query (`clearCurrentAssistantMessage()`)
+9. UI updates reactively via easy-peasy store
 
 #### MCP Server Mode
 
@@ -215,7 +352,7 @@ Uses `cosmiconfig` for flexible configuration loading:
       args: string[]
       env?: Record<string, string>
       prompt?: string      // Optional system prompt
-      denyTools?: string[] // Optional list of tools to deny
+      disallowedTools?: string[] // Optional list of tools to deny
     }
   }
 }
@@ -223,7 +360,7 @@ Uses `cosmiconfig` for flexible configuration loading:
 
 #### Tool Filtering
 
-The `denyTools` configuration allows blocking specific MCP tools:
+The `disallowedTools` configuration allows blocking specific MCP tools:
 
 - Tool names are exact matches (wildcards not supported)
 - Denied tools are passed to the SDK as `disallowedTools` option

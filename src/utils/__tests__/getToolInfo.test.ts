@@ -1,10 +1,10 @@
-import { test, expect, describe } from "bun:test"
+import { describe, expect, test } from "bun:test"
+import type { AgentChatConfig } from "store"
 import {
-  getToolInfo,
   getDisallowedTools,
+  getToolInfo,
   isToolDisallowed,
 } from "utils/getToolInfo"
-import type { AgentChatConfig } from "store"
 
 describe("getToolInfo", () => {
   test("should extract server name and tool name from MCP format", () => {
@@ -50,7 +50,8 @@ describe("getDisallowedTools", () => {
         github: {
           command: "node",
           args: [],
-          denyTools: ["search_repositories", "create_issue"],
+          description: "GitHub server",
+          disallowedTools: ["search_repositories", "create_issue"],
         },
       },
     }
@@ -60,6 +61,7 @@ describe("getDisallowedTools", () => {
     expect(result).toEqual([
       "mcp__github__search_repositories",
       "mcp__github__create_issue",
+      "Bash",
     ])
   })
 
@@ -69,13 +71,14 @@ describe("getDisallowedTools", () => {
         github: {
           command: "node",
           args: [],
+          description: "GitHub server",
         },
       },
     }
 
     const result = getDisallowedTools(config)
 
-    expect(result).toEqual([])
+    expect(result).toEqual(["Bash"])
   })
 
   test("should handle multiple servers", () => {
@@ -84,39 +87,47 @@ describe("getDisallowedTools", () => {
         github: {
           command: "node",
           args: [],
-          denyTools: ["search"],
+          description: "GitHub server",
+          disallowedTools: ["search"],
         },
         gitlab: {
           command: "node",
           args: [],
-          denyTools: ["merge"],
+          description: "GitLab server",
+          disallowedTools: ["merge"],
         },
       },
     }
 
     const result = getDisallowedTools(config)
 
-    expect(result).toEqual(["mcp__github__search", "mcp__gitlab__merge"])
+    expect(result).toEqual([
+      "mcp__github__search",
+      "mcp__gitlab__merge",
+      "Bash",
+    ])
   })
 
-  test("should handle servers with no denyTools", () => {
+  test("should handle servers with no disallowedTools", () => {
     const config: AgentChatConfig = {
       mcpServers: {
         github: {
           command: "node",
           args: [],
-          denyTools: ["search"],
+          description: "GitHub server",
+          disallowedTools: ["search"],
         },
         gitlab: {
           command: "node",
           args: [],
+          description: "GitLab server",
         },
       },
     }
 
     const result = getDisallowedTools(config)
 
-    expect(result).toEqual(["mcp__github__search"])
+    expect(result).toEqual(["mcp__github__search", "Bash"])
   })
 })
 
@@ -127,7 +138,8 @@ describe("isToolDisallowed", () => {
         github: {
           command: "node",
           args: [],
-          denyTools: ["search_repositories"],
+          description: "GitHub server",
+          disallowedTools: ["search_repositories"],
         },
       },
     }
@@ -146,7 +158,8 @@ describe("isToolDisallowed", () => {
         github: {
           command: "node",
           args: [],
-          denyTools: ["search_repositories"],
+          description: "GitHub server",
+          disallowedTools: ["search_repositories"],
         },
       },
     }
@@ -165,6 +178,7 @@ describe("isToolDisallowed", () => {
         github: {
           command: "node",
           args: [],
+          description: "GitHub server",
         },
       },
     }
@@ -183,7 +197,8 @@ describe("isToolDisallowed", () => {
         github: {
           command: "node",
           args: [],
-          denyTools: ["search"],
+          description: "GitHub server",
+          disallowedTools: ["search"],
         },
       },
     }

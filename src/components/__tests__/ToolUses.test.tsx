@@ -1,9 +1,8 @@
-import React from "react"
-import { render } from "ink-testing-library"
-import { test, expect, describe } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { ToolUses } from "components/ToolUses"
-import { AgentStore } from "store"
+import { render } from "ink-testing-library"
 import type { ToolUse } from "store"
+import { AgentStore } from "store"
 
 describe("ToolUses", () => {
   test("should display MCP tool with server name", () => {
@@ -13,15 +12,10 @@ describe("ToolUses", () => {
       input: { query: "test" },
     }
 
-    const { lastFrame, rerender } = render(
+    const config = { mcpServers: {} }
+    const { lastFrame } = render(
       <AgentStore.Provider>
-        <TestWrapper toolUse={toolUse} config={{ mcpServers: {} }} />
-      </AgentStore.Provider>
-    )
-
-    rerender(
-      <AgentStore.Provider>
-        <TestWrapper toolUse={toolUse} config={{ mcpServers: {} }} />
+        <TestWrapper toolUse={toolUse} config={config} />
       </AgentStore.Provider>
     )
 
@@ -92,7 +86,7 @@ describe("ToolUses", () => {
               github: {
                 command: "node",
                 args: [],
-                denyTools: ["search"],
+                disallowedTools: ["search"],
               },
             },
           }}
@@ -109,7 +103,7 @@ describe("ToolUses", () => {
               github: {
                 command: "node",
                 args: [],
-                denyTools: ["search"],
+                disallowedTools: ["search"],
               },
             },
           }}
@@ -136,7 +130,7 @@ describe("ToolUses", () => {
               github: {
                 command: "node",
                 args: [],
-                denyTools: ["search"],
+                disallowedTools: ["search"],
               },
             },
           }}
@@ -153,7 +147,7 @@ describe("ToolUses", () => {
               github: {
                 command: "node",
                 args: [],
-                denyTools: ["search"],
+                disallowedTools: ["search"],
               },
             },
           }}
@@ -219,6 +213,11 @@ const TestWrapper = ({
   config: any
 }) => {
   const actions = AgentStore.useStoreActions((actions) => actions)
-  actions.setConfig(config)
+  const currentConfig = AgentStore.useStoreState((state) => state.config)
+
+  if (!currentConfig) {
+    actions.setConfig(config)
+  }
+
   return <ToolUses entry={toolUse} />
 }

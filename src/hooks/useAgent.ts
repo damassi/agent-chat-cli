@@ -1,38 +1,45 @@
 import { useEffect, useRef } from "react"
 import { AgentStore } from "store"
-import { useMcpServers } from "hooks/useMcpServers"
-import { runAgentLoop, messageTypes } from "utils/runAgentLoop"
+import { messageTypes, runAgentLoop } from "utils/runAgentLoop"
 
 export function useAgent() {
-  const { initMcpServers } = useMcpServers()
-
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
   const sessionId = AgentStore.useStoreState((state) => state.sessionId)
   const config = AgentStore.useStoreState((state) => state.config)
+  const abortController = AgentStore.useStoreState(
+    (state) => state.abortController
+  )
   const actions = AgentStore.useStoreActions((actions) => actions)
   const currentAssistantMessageRef = useRef("")
+  const abortControllerRef = useRef(abortController)
+
+  // Update ref when abort controller changes
+  abortControllerRef.current = abortController
 
   useEffect(() => {
     const streamEnabled = config.stream ?? false
-    const abortController = new AbortController()
-    actions.setAbortController(abortController)
 
     const runAgent = async () => {
-      const { response } = runAgentLoop({
+      const { agentLoop } = await runAgentLoop({
         messageQueue,
         sessionId,
         config,
-        abortController,
+        abortControllerRef,
         onToolPermissionRequest: (toolName, input) => {
           actions.setPendingToolPermission({ toolName, input })
+        },
+        onServerConnection: (status) => {
+          actions.addChatHistoryEntry({
+            type: "message",
+            role: "system",
+            content: status,
+          })
         },
         setIsProcessing: actions.setIsProcessing,
       })
 
-      await initMcpServers(response)
-
       try {
-        for await (const message of response) {
+        for await (const message of agentLoop) {
           switch (true) {
             case message.type === messageTypes.SYSTEM &&
               message.subtype === messageTypes.INIT: {
@@ -110,10 +117,28 @@ export function useAgent() {
               }
 
               if (!message.is_error) {
+                // Extract cache and token information
+                const cacheReadTokens =
+                  message.usage.cache_read_input_tokens || 0
+                const cacheCreationTokens =
+                  message.usage.cache_creation_input_tokens || 0
+                const inputTokens = message.usage.input_tokens || 0
+
+                // In the Claude API, input_tokens appears to be only non-cached tokens
+                // Total input = regular input tokens + cache read tokens + cache creation tokens
+                const totalInputTokens =
+                  inputTokens + cacheReadTokens + cacheCreationTokens
+
+                // Calculate cache hit rate as percentage of total input that was served from cache
+                const cacheRate =
+                  totalInputTokens > 0
+                    ? ((cacheReadTokens / totalInputTokens) * 100).toFixed(1)
+                    : "0.0"
+
                 actions.setStats(
                   `Completed in ${(message.duration_ms / 1000).toFixed(
                     2
-                  )}s | Cost: $${message.total_cost_usd.toFixed(4)} | Turns: ${
+                  )}s | Cost: $${message.total_cost_usd.toFixed(4)} | Cache: ${cacheRate}% | Turns: ${
                     message.num_turns
                   }`
                 )
@@ -138,9 +163,5 @@ export function useAgent() {
     }
 
     runAgent()
-
-    return () => {
-      abortController.abort()
-    }
   }, [])
 }

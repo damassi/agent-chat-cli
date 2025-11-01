@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
@@ -6,8 +5,11 @@ import {
   LoggingMessageNotificationSchema,
   type LoggingMessageNotification,
 } from "@modelcontextprotocol/sdk/types.js"
+import { useEffect } from "react"
 import { AgentStore } from "store"
 import config from "../../mcp-client.config"
+
+const CALL_TOOL_TIMEOUT = 600000 // 10 minutes
 
 export const useMcpClient = () => {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
@@ -19,10 +21,11 @@ export const useMcpClient = () => {
         const client = new Client(
           {
             name: "agent-chat-cli-client",
-            version: "1.0.0",
+            version: "0.1.0",
           },
           {
             capabilities: {
+              // Allow bot to ask for input
               elicitation: {},
             },
           }
@@ -54,6 +57,18 @@ export const useMcpClient = () => {
                   })
                 } else if (data.type === "mcp_servers") {
                   actions.setMcpServers(data.servers)
+                } else if (data.type === "system_message") {
+                  actions.addChatHistoryEntry({
+                    type: "message",
+                    role: "system",
+                    content: data.content,
+                  })
+                } else if (data.type === "text_message") {
+                  actions.addChatHistoryEntry({
+                    type: "message",
+                    role: "assistant",
+                    content: data.content,
+                  })
                 }
               } catch {
                 // noop
@@ -88,10 +103,14 @@ export const useMcpClient = () => {
 
         await client.connect(transport)
         await client.setLoggingLevel("debug")
-        await client.callTool({
-          name: "get_agent_status",
-          arguments: {},
-        })
+        await client.callTool(
+          {
+            name: "get_agent_status",
+            arguments: {},
+          },
+          undefined,
+          { timeout: CALL_TOOL_TIMEOUT }
+        )
 
         while (true) {
           const userMessage = await messageQueue.waitForMessage()
@@ -107,32 +126,22 @@ export const useMcpClient = () => {
           try {
             const startTime = Date.now()
 
-            const result = await client.callTool({
-              name: "ask_agent",
-              arguments: {
-                query: userMessage,
+            await client.callTool(
+              {
+                name: "ask_agent",
+                arguments: {
+                  query: userMessage,
+                },
               },
-            })
+              undefined,
+              { timeout: CALL_TOOL_TIMEOUT }
+            )
 
             const duration = Date.now() - startTime
 
-            let responseText = ""
-
-            if (result.content && Array.isArray(result.content)) {
-              for (const item of result.content) {
-                if (item.type === "text") {
-                  responseText += item.text
-                }
-              }
-            }
-
-            if (responseText) {
-              actions.addChatHistoryEntry({
-                type: "message",
-                role: "assistant",
-                content: responseText,
-              })
-            }
+            // Messages are already added via logging notifications during execution
+            // No need to add a final message here since text_message notifications
+            // already added each response as it came in
 
             actions.setStats(`Completed in ${(duration / 1000).toFixed(2)}s`)
             actions.setIsProcessing(false)

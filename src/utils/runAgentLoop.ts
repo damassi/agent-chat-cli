@@ -1,8 +1,12 @@
 import { query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
 import type { AgentChatConfig } from "store"
-import { buildSystemPrompt } from "utils/getPrompt"
 import { createCanUseTool } from "utils/canUseTool"
+import { createSDKAgents } from "utils/createAgent"
+import { getEnabledMcpServers } from "utils/getEnabledMcpServers"
+import { buildSystemPrompt } from "utils/getPrompt"
 import { getDisallowedTools } from "utils/getToolInfo"
+import { log } from "utils/logger"
+import { selectMcpServers } from "utils/mcpServerSelectionAgent"
 import type { MessageQueue } from "utils/MessageQueue"
 
 export const messageTypes = {
@@ -13,25 +17,34 @@ export const messageTypes = {
   SYSTEM: "system",
 } as const
 
+export const contentTypes = {
+  TEXT: "text",
+  TOOL_USE: "tool_use",
+} as const
+
 export interface RunAgentLoopOptions {
-  abortController?: AbortController
+  abortControllerRef?: { current: AbortController | undefined }
   config: AgentChatConfig
   messageQueue: MessageQueue
   sessionId?: string
+  additionalSystemPrompt?: string
   onToolPermissionRequest?: (toolName: string, input: any) => void
+  onServerConnection?: (status: string) => void
   setIsProcessing?: (value: boolean) => void
+  existingConnectedServers?: Set<string>
 }
 
-export const runAgentLoop = ({
-  abortController,
+export const runAgentLoop = async ({
+  abortControllerRef,
   config,
   messageQueue,
   onToolPermissionRequest,
-  sessionId,
+  onServerConnection,
+  sessionId: initialSessionId,
+  additionalSystemPrompt,
   setIsProcessing,
+  existingConnectedServers,
 }: RunAgentLoopOptions) => {
-  const systemPrompt = buildSystemPrompt(config)
-
   const canUseTool = createCanUseTool({
     messageQueue,
     onToolPermissionRequest,
@@ -39,48 +52,102 @@ export const runAgentLoop = ({
   })
 
   const disallowedTools = getDisallowedTools(config)
+  const enabledMcpServers = getEnabledMcpServers(config.mcpServers)
 
-  const response = query({
-    prompt: startConversation(messageQueue, sessionId),
-    options: {
-      model: "haiku",
-      permissionMode: config.permissionMode ?? "default",
-      includePartialMessages: config.stream ?? false,
-      mcpServers: config.mcpServers,
-      abortController,
-      canUseTool,
-      systemPrompt,
-      disallowedTools,
-    },
-  })
+  let currentSessionId = initialSessionId
+  const connectedServers = existingConnectedServers ?? new Set<string>()
+
+  async function* agentLoop() {
+    while (true) {
+      const userMessage = await messageQueue.waitForMessage()
+
+      log("\n[runAgentLoop] USER:", userMessage, "\n")
+
+      if (userMessage.toLowerCase() === "exit") {
+        break
+      }
+
+      if (!userMessage.trim()) {
+        continue
+      }
+
+      const getSystemPrompt = async () => {
+        return await buildSystemPrompt(
+          config,
+          additionalSystemPrompt,
+          connectedServers
+        )
+      }
+
+      const { mcpServers } = await selectMcpServers({
+        userMessage,
+        enabledMcpServers,
+        agents: config.agents,
+        alreadyConnectedServers: connectedServers,
+        sessionId: currentSessionId,
+        abortController: abortControllerRef?.current,
+        onServerConnection,
+      })
+
+      const systemPrompt = await getSystemPrompt()
+      const agents = await createSDKAgents(config.agents)
+
+      try {
+        const turnResponse = query({
+          prompt: (async function* () {
+            yield {
+              type: "user" as const,
+              session_id: currentSessionId || "",
+              message: {
+                role: "user" as const,
+                content: userMessage,
+              },
+            } as SDKUserMessage
+          })(),
+          options: {
+            model: config.model ?? "haiku",
+            permissionMode: config.permissionMode ?? "default",
+            includePartialMessages: config.stream ?? false,
+            mcpServers,
+            agents,
+            abortController: abortControllerRef?.current,
+            canUseTool,
+            systemPrompt,
+            disallowedTools,
+            resume: currentSessionId,
+          },
+        })
+
+        for await (const message of turnResponse) {
+          if (
+            message.type === messageTypes.SYSTEM &&
+            message.subtype === messageTypes.INIT
+          ) {
+            log(
+              "[runAgentLoop] [messageTypes.INIT]:",
+              JSON.stringify(message, null, 2)
+            )
+
+            currentSessionId = message.session_id
+          }
+
+          yield message
+
+          // If we hit a RESULT, this turn is complete
+          if (message.type === messageTypes.RESULT) {
+            break
+          }
+        }
+      } catch (error) {
+        console.log("[ERROR] [runAgentLoop] Query aborted or failed:", error)
+
+        // Continue to next message
+      }
+    }
+  }
 
   return {
-    response,
-  }
-}
-
-const startConversation = async function* (
-  messageQueue: MessageQueue,
-  sessionId?: string
-) {
-  while (true) {
-    const userMessage = await messageQueue.waitForMessage()
-
-    if (userMessage.toLowerCase() === "exit") {
-      break
-    }
-
-    if (!userMessage.trim()) {
-      continue
-    }
-
-    yield {
-      type: "user" as const,
-      session_id: sessionId || "",
-      message: {
-        role: "user" as const,
-        content: userMessage,
-      },
-    } as SDKUserMessage
+    agentLoop: agentLoop(),
+    connectedServers,
   }
 }
