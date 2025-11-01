@@ -1,7 +1,7 @@
-import { Box } from "ink"
-import TextInput from "ink-text-input"
 import { BlinkCaret } from "components/BlinkCaret"
 import { useCycleMessages } from "hooks/useCycleMessages"
+import { Box } from "ink"
+import TextInput from "ink-text-input"
 import { AgentStore } from "store"
 
 const commands = {
@@ -40,7 +40,7 @@ export const UserInput: React.FC = () => {
 
   return (
     <Box>
-      <BlinkCaret enabled={store.mcpServers.length > 0} />
+      <BlinkCaret />
 
       <TextInput
         value={store.input}

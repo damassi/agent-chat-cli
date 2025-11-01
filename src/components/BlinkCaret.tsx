@@ -11,7 +11,7 @@ interface BlinkCaretProps {
 
 export const BlinkCaret: React.FC<BlinkCaretProps> = ({
   color = "purple",
-  enabled = false,
+  enabled = true,
   interval = BLINK_INTERVAL,
 }) => {
   const [visible, setVisible] = useState(false)

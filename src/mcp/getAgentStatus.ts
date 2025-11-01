@@ -1,13 +1,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { loadConfig } from "utils/loadConfig"
-import { runAgentLoop, messageTypes } from "utils/runAgentLoop"
 import { MessageQueue } from "utils/MessageQueue"
+import { messageTypes, runAgentLoop } from "utils/runAgentLoop"
 
 export const getAgentStatus = async (mcpServer?: McpServer) => {
   const config = await loadConfig()
   const messageQueue = new MessageQueue()
 
-  const { response } = runAgentLoop({
+  const { agentLoop } = await runAgentLoop({
     messageQueue,
     config,
   })
@@ -16,12 +16,11 @@ export const getAgentStatus = async (mcpServer?: McpServer) => {
 
   messageQueue.sendMessage("status")
 
-  for await (const message of response) {
+  for await (const message of agentLoop) {
     if (
       message.type === messageTypes.SYSTEM &&
       message.subtype === messageTypes.INIT
     ) {
-      // Emit MCP servers notification
       if (mcpServer && message.mcp_servers) {
         await mcpServer.sendLoggingMessage({
           level: "info",

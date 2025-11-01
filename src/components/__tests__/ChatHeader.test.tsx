@@ -1,7 +1,6 @@
-import React from "react"
-import { render } from "ink-testing-library"
-import { test, expect, describe } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { ChatHeader } from "components/ChatHeader"
+import { render } from "ink-testing-library"
 import { AgentStore } from "store"
 
 describe("ChatHeader", () => {
@@ -26,14 +25,14 @@ describe("ChatHeader", () => {
     expect(lastFrame()).toContain("Type 'exit' to quit")
   })
 
-  test("should show connecting message when no servers", () => {
+  test("should show available servers when no servers connected", () => {
     const { lastFrame } = render(
       <AgentStore.Provider>
         <ChatHeader />
       </AgentStore.Provider>
     )
 
-    expect(lastFrame()).toContain("Connecting to MCP servers...")
+    expect(lastFrame()).toContain("Available MCP Servers:")
   })
 
   test("should display connected servers", () => {

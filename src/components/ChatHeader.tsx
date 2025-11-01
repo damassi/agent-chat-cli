@@ -1,9 +1,14 @@
 import { Box, Text } from "ink"
-import Spinner from "ink-spinner"
 import { AgentStore } from "store"
 
 export const ChatHeader: React.FC = () => {
   const store = AgentStore.useStoreState((state) => state)
+  const availableServers = AgentStore.useStoreState(
+    (state) => state.availableMcpServers
+  )
+  const availableAgents = AgentStore.useStoreState(
+    (state) => state.availableAgents
+  )
 
   return (
     <Box flexDirection="column" marginBottom={1} paddingTop={1}>
@@ -25,12 +30,19 @@ export const ChatHeader: React.FC = () => {
           ))}
         </Box>
       ) : (
-        <Text dimColor>
-          <Text color="green">
-            <Spinner type="balloon" />
-          </Text>
-          {" Connecting to MCP servers..."}
-        </Text>
+        <>
+          <Box>
+            <Text dimColor>Available MCP Servers: </Text>
+            <Text color="white">{availableServers.join(", ")}</Text>
+          </Box>
+        </>
+      )}
+
+      {availableAgents.length > 0 && (
+        <Box>
+          <Text dimColor>Agents: </Text>
+          <Text color="white">{availableAgents.join(", ")}</Text>
+        </Box>
       )}
 
       <Box marginTop={1} />

@@ -1,43 +1,50 @@
 import { useEffect, useRef } from "react"
 import { AgentStore } from "store"
-import { useMcpServers } from "hooks/useMcpServers"
-import { runAgentLoop, messageTypes } from "utils/runAgentLoop"
+import { messageTypes, runAgentLoop } from "utils/runAgentLoop"
 
 export function useAgent() {
-  const { initMcpServers } = useMcpServers()
-
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
   const sessionId = AgentStore.useStoreState((state) => state.sessionId)
   const config = AgentStore.useStoreState((state) => state.config)
+  const abortController = AgentStore.useStoreState(
+    (state) => state.abortController
+  )
   const actions = AgentStore.useStoreActions((actions) => actions)
   const currentAssistantMessageRef = useRef("")
+  const abortControllerRef = useRef(abortController)
+
+  // Update ref when abort controller changes
+  abortControllerRef.current = abortController
 
   useEffect(() => {
     const streamEnabled = config.stream ?? false
-    const abortController = new AbortController()
-    actions.setAbortController(abortController)
 
     const runAgent = async () => {
-      const { response } = runAgentLoop({
+      const { agentLoop } = await runAgentLoop({
         messageQueue,
         sessionId,
         config,
-        abortController,
+        abortControllerRef,
         onToolPermissionRequest: (toolName, input) => {
           actions.setPendingToolPermission({ toolName, input })
+        },
+        onServerConnection: (status) => {
+          actions.addChatHistoryEntry({
+            type: "message",
+            role: "system",
+            content: status,
+          })
         },
         setIsProcessing: actions.setIsProcessing,
       })
 
-      await initMcpServers(response)
-
       try {
-        for await (const message of response) {
+        for await (const message of agentLoop) {
           switch (true) {
             case message.type === messageTypes.SYSTEM &&
               message.subtype === messageTypes.INIT: {
               actions.setSessionId(message.session_id)
-              actions.setMcpServers(message.mcp_servers)
+              actions.handleMcpServerStatus(message.mcp_servers)
 
               continue
             }
@@ -118,7 +125,7 @@ export function useAgent() {
                   }`
                 )
               } else {
-                actions.setStats(`[agent-chat-cli] Error: ${message.subtype}`)
+                actions.setStats(`[agent-cli] Error: ${message.subtype}`)
               }
               actions.setIsProcessing(false)
               break
@@ -130,7 +137,7 @@ export function useAgent() {
           error instanceof Error &&
           !error.message.includes("process aborted by user")
         ) {
-          actions.setStats(`[agent-chat-cli] ${error}`)
+          actions.setStats(`[agent-cli] ${error}`)
         }
 
         actions.setIsProcessing(false)
@@ -138,9 +145,5 @@ export function useAgent() {
     }
 
     runAgent()
-
-    return () => {
-      abortController.abort()
-    }
   }, [])
 }

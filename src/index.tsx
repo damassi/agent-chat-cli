@@ -1,7 +1,7 @@
 import { render } from "ink"
-import { App } from "./App"
-import { validateEnv } from "utils/validateEnv"
 import { AgentStore } from "store"
+import { validateEnv } from "utils/validateEnv"
+import { App } from "./App"
 
 const main = () => {
   validateEnv()
@@ -18,5 +18,5 @@ const main = () => {
 try {
   main()
 } catch (error) {
-  console.error(error)
+  console.error("[agent-cli] [ERROR]:", error)
 }

@@ -1,12 +1,13 @@
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js"
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js"
+import cors from "cors"
+import express from "express"
+import { getMcpServer } from "mcp/getMcpServer"
 import { randomUUID } from "node:crypto"
 import { loadConfig } from "utils/loadConfig"
-import { getMcpServer } from "mcp/utils/getMcpServer"
-import express from "express"
-import cors from "cors"
+import { log } from "utils/logger"
 
-const PORT = 3000
+const PORT = 8080
 
 export const main = async () => {
   await loadConfig()
@@ -24,15 +25,17 @@ export const main = async () => {
     })
   )
 
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok" })
+  })
+
   app.post("/mcp", async (req, res) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined
 
     if (sessionId) {
-      console.log(
-        `[agent-chat-cli] Received MCP request for session: ${sessionId}`
-      )
+      log(`Received MCP request for session: ${sessionId}`)
     } else {
-      console.log("[agent-chat-cli] New MCP request")
+      log("New MCP request")
     }
 
     try {
@@ -40,13 +43,24 @@ export const main = async () => {
 
       if (sessionId && transports[sessionId]) {
         transport = transports[sessionId]
+      } else if (sessionId && !transports[sessionId]) {
+        log(`[/mcp POST] Session not found: ${sessionId}`)
+
+        // Per MCP spec
+        res.status(404).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: "Session not found",
+          },
+          id: null,
+        })
+        return
       } else if (!sessionId && isInitializeRequest(req.body)) {
         transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
           onsessioninitialized: (newSessionId) => {
-            console.log(
-              `[agent-chat-cli] Session initialized with ID: ${newSessionId}`
-            )
+            log(`[/mcp POST] Session initialized with ID: ${newSessionId}`)
 
             transports[newSessionId] = transport
           },
@@ -56,13 +70,14 @@ export const main = async () => {
           const sid = transport.sessionId
 
           if (sid && transports[sid]) {
-            console.log(`[agent-chat-cli] Transport closed for session ${sid}`)
+            log(`[onclose] Transport closed for session ${sid}`)
             delete transports[sid]
           }
         }
 
         const server = getMcpServer()
 
+        // Connect
         await server.connect(transport)
         await transport.handleRequest(req, res, req.body)
 
@@ -79,9 +94,10 @@ export const main = async () => {
         return
       }
 
+      // Req / Res handlers
       await transport.handleRequest(req, res, req.body)
     } catch (error) {
-      console.error("[agent-chat-cli] Error handling MCP request:", error)
+      console.error("[agent-cli] Error handling MCP request:", error)
 
       if (!res.headersSent) {
         res.status(500).json({
@@ -100,20 +116,26 @@ export const main = async () => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined
 
     if (!sessionId || !transports[sessionId]) {
-      res.status(400).send("Invalid or missing session ID")
+      log(`[/mcp GET] Session not found: ${sessionId}`)
+
+      res.status(404).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Session not found",
+        },
+        id: null,
+      })
+
       return
     }
 
     const lastEventId = req.headers["last-event-id"]
 
     if (lastEventId) {
-      console.log(
-        `[agent-chat-cli] Client reconnecting with Last-Event-ID: ${lastEventId}`
-      )
+      log(`[/mcp GET] Client reconnecting with Last-Event-ID: ${lastEventId}`)
     } else {
-      console.log(
-        `[agent-chat-cli] Establishing new HTTP stream for session ${sessionId}`
-      )
+      log(`[/mcp GET] Establishing new HTTP stream for session ${sessionId}`)
     }
 
     const transport = transports[sessionId]
@@ -124,20 +146,28 @@ export const main = async () => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined
 
     if (!sessionId || !transports[sessionId]) {
-      res.status(400).send("Invalid or missing session ID")
+      log(`[/mcp DELETE] Session not found: ${sessionId}`)
+
+      res.status(404).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Session not found",
+        },
+        id: null,
+      })
+
       return
     }
 
-    console.log(
-      `[agent-chat-cli] Received session termination request for session ${sessionId}`
-    )
+    log(`[/mcp DELETE] Deleting session: ${sessionId}`)
 
     try {
       const transport = transports[sessionId]
       await transport.handleRequest(req, res)
     } catch (error) {
-      console.error(
-        "[agent-chat-cli] Error handling session termination:",
+      console.log(
+        "[agent-cli] [/mcp DELETE] [ERROR] Error deleting session:",
         error
       )
 
@@ -149,30 +179,28 @@ export const main = async () => {
 
   app.listen(PORT, () => {
     console.log(
-      `\n[agent-chat-cli] MCP HTTP Server running on port http://localhost:${PORT}\n`
+      `\n[agent-cli] MCP HTTP Server running on port http://localhost:${PORT}\n`
     )
   })
 
   process.on("SIGINT", async () => {
-    console.log("[agent-chat-cli] Shutting down server...")
+    console.log("[agent-cli] Shutting down server...")
 
     for (const sessionId in transports) {
       try {
-        console.log(
-          `[agent-chat-cli] Closing transport for session ${sessionId}`
-        )
+        console.log(`[agent-cli] Closing transport for session ${sessionId}`)
 
         await transports[sessionId]?.close()
         delete transports[sessionId]
       } catch (error) {
         console.error(
-          `[agent-chat-cli] Error closing transport for session ${sessionId}:`,
+          `[agent-cli] Error closing transport for session ${sessionId}:`,
           error
         )
       }
     }
 
-    console.log("[agent-chat-cli] Server shutdown complete")
+    console.log("[agent-cli] Server shutdown complete.")
     process.exit(0)
   })
 }
@@ -180,6 +208,6 @@ export const main = async () => {
 try {
   main()
 } catch (error) {
-  console.error("[agent-chat-cli] Fatal error starting HTTP server:", error)
+  console.error("[agent-cli] Fatal error starting HTTP server:", error)
   process.exit(1)
 }

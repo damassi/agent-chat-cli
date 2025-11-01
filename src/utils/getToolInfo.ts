@@ -12,21 +12,23 @@ export const getToolInfo = (tool: string) => {
 }
 
 /**
- * Get disallowedTools list from MCP server denyTools config.
+ * Get disallowedTools list from MCP server disallowedTools config.
  * Converts tool names like "search_repositories" to "mcp__github__search_repositories"
  */
 export const getDisallowedTools = (config: AgentChatConfig): string[] => {
-  const disallowed = Object.entries(config.mcpServers).flatMap(
-    ([serverName, serverConfig]) => {
-      if (!serverConfig.denyTools) {
+  const disallowedSystemTools = config.disallowedTools ?? ["Bash"]
+
+  const disallowed = Object.entries(config.mcpServers)
+    .flatMap(([serverName, serverConfig]) => {
+      if (!serverConfig.disallowedTools) {
         return []
       }
 
-      return serverConfig.denyTools.map(
+      return serverConfig.disallowedTools.map(
         (toolName) => `mcp__${serverName}__${toolName}`
       )
-    }
-  )
+    })
+    .concat(disallowedSystemTools)
 
   return disallowed
 }

@@ -48,6 +48,50 @@ const renderInline = (tokens: any[]): React.ReactNode[] => {
   })
 }
 
+const renderListItem = (
+  item: any,
+  itemIdx: number,
+  depth: number
+): React.ReactNode => {
+  const indent = "  ".repeat(depth)
+  const bullet = "• "
+
+  return (
+    <React.Fragment key={itemIdx}>
+      {item.tokens.map((t: any, tIdx: number) => {
+        if (t.type === "text" && t.tokens) {
+          return (
+            <Text key={tIdx}>
+              {indent}
+              {bullet}
+              {renderInline(t.tokens)}
+            </Text>
+          )
+        } else if (t.type === "list") {
+          // Handle nested lists
+          return (
+            <React.Fragment key={tIdx}>
+              {t.items.map((nestedItem: any, nestedIdx: number) =>
+                renderListItem(nestedItem, nestedIdx, depth + 1)
+              )}
+            </React.Fragment>
+          )
+        } else if (t.type === "paragraph") {
+          // Handle paragraphs in list items
+          return (
+            <Text key={tIdx}>
+              {indent}
+              {bullet}
+              {renderInline(t.tokens)}
+            </Text>
+          )
+        }
+        return null
+      })}
+    </React.Fragment>
+  )
+}
+
 const renderToken = (token: any, idx: number): React.ReactNode => {
   switch (token.type) {
     case "paragraph":
@@ -62,21 +106,7 @@ const renderToken = (token: any, idx: number): React.ReactNode => {
       return (
         <React.Fragment key={idx}>
           {token.items.map((item: any, itemIdx: number) => {
-            // List items contain nested tokens (usually paragraphs with text)
-            const content = item.tokens
-              .map((t: any) => {
-                if (t.type === "text" && t.tokens) {
-                  return renderInline(t.tokens)
-                }
-                return null
-              })
-              .filter(Boolean)
-
-            return (
-              <Text key={itemIdx}>
-                • {content}
-              </Text>
-            )
+            return renderListItem(item, itemIdx, 0)
           })}
         </React.Fragment>
       )

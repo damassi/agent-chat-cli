@@ -14,7 +14,7 @@ export const useConfig = () => {
         const loadedConfig = await loadConfig()
         actions.setConfig(loadedConfig)
       } catch (error) {
-        console.error("[agent-chat-cli] Failed to load config:", error)
+        console.error("[agent-cli] Failed to load config:", error)
         process.exit(1)
       }
     }

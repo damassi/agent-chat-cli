@@ -48,7 +48,7 @@ describe("Store", () => {
       expect(getState().sessionId).toBeUndefined()
       expect(getState().stats).toBeUndefined()
       expect(getState().pendingToolPermission).toBeUndefined()
-      expect(getState().abortController).toBeUndefined()
+      expect(getState().abortController).toBeInstanceOf(AbortController)
     })
 
     test("should have MessageQueue instance", () => {
@@ -73,13 +73,14 @@ describe("Store", () => {
           "setPendingToolPermission",
           "setAbortController",
           "setConfig",
-          "setcurrentAssistantMessage",
+          "setCurrentAssistantMessage",
           "setCurrentToolUses",
           "setInput",
           "setIsProcessing",
           "setMcpServers",
           "setSessionId",
           "setStats",
+          "handleMcpServerStatus",
         ])
       )
     })
@@ -143,10 +144,10 @@ describe("Store", () => {
   })
 
   describe("assistant message actions", () => {
-    test("setcurrentAssistantMessage should set message", () => {
+    test("setCurrentAssistantMessage should set message", () => {
       const { getState, actions } = setup()
 
-      actions.setcurrentAssistantMessage("Hello")
+      actions.setCurrentAssistantMessage("Hello")
 
       expect(getState().currentAssistantMessage).toBe("Hello")
     })
@@ -154,7 +155,7 @@ describe("Store", () => {
     test("appendCurrentAssistantMessage should append to current message", () => {
       const { getState, actions } = setup()
 
-      actions.setcurrentAssistantMessage("Hello")
+      actions.setCurrentAssistantMessage("Hello")
       actions.appendCurrentAssistantMessage(" world")
 
       expect(getState().currentAssistantMessage).toBe("Hello world")
@@ -163,7 +164,7 @@ describe("Store", () => {
     test("clearCurrentAssistantMessage should clear message", () => {
       const { getState, actions } = setup()
 
-      actions.setcurrentAssistantMessage("Hello")
+      actions.setCurrentAssistantMessage("Hello")
       actions.clearCurrentAssistantMessage()
 
       expect(getState().currentAssistantMessage).toBe("")
@@ -397,7 +398,7 @@ describe("Store", () => {
         role: "user",
         content: "Hello",
       })
-      actions.setcurrentAssistantMessage("Assistant message")
+      actions.setCurrentAssistantMessage("Assistant message")
       actions.addToolUse({
         type: "tool_use",
         name: "tool",
@@ -412,6 +413,91 @@ describe("Store", () => {
       expect(getState().currentToolUses).toEqual([])
       expect(getState().input).toBe("")
       expect(getState().stats).toBeNull()
+    })
+  })
+
+  describe("handleMcpServerStatus thunk", () => {
+    test("should set mcp servers", () => {
+      const { getState, actions } = setup()
+
+      const servers: McpServerStatus[] = [
+        { name: "github", status: "connected" },
+        { name: "notion", status: "connected" },
+      ]
+
+      actions.handleMcpServerStatus(servers)
+
+      expect(getState().mcpServers).toEqual(servers)
+    })
+
+    test("should add error message for failed servers", () => {
+      const { getState, actions } = setup()
+
+      const servers: McpServerStatus[] = [
+        { name: "github", status: "connected" },
+        { name: "postgres", status: "failed" },
+        { name: "redis", status: "failed" },
+      ]
+
+      actions.handleMcpServerStatus(servers)
+
+      const chatHistory = getState().chatHistory
+      const errorMessage = chatHistory.find(
+        (entry) =>
+          entry.type === "message" &&
+          entry.role === "system" &&
+          "content" in entry &&
+          entry.content.includes("Failed to connect")
+      )
+
+      expect(errorMessage).toBeDefined()
+      expect(errorMessage?.type).toBe("message")
+      if (errorMessage?.type === "message") {
+        expect(errorMessage.content).toBe(
+          "[Error] Failed to connect to postgres, redis"
+        )
+      }
+    })
+
+    test("should not add any messages when all servers connect successfully", () => {
+      const { getState, actions } = setup()
+
+      const servers: McpServerStatus[] = [
+        { name: "github", status: "connected" },
+        { name: "notion", status: "connected" },
+      ]
+
+      actions.handleMcpServerStatus(servers)
+
+      const chatHistory = getState().chatHistory
+      expect(chatHistory.length).toBe(0)
+    })
+
+    test("should not add message when no servers provided", () => {
+      const { getState, actions } = setup()
+
+      actions.handleMcpServerStatus([])
+
+      const chatHistory = getState().chatHistory
+      expect(chatHistory.length).toBe(0)
+    })
+
+    test("should handle only failed servers", () => {
+      const { getState, actions } = setup()
+
+      const servers: McpServerStatus[] = [
+        { name: "postgres", status: "failed" },
+      ]
+
+      actions.handleMcpServerStatus(servers)
+
+      const chatHistory = getState().chatHistory
+      expect(chatHistory.length).toBe(1)
+      expect(chatHistory[0]).toEqual({
+        type: "message",
+        role: "system",
+        content: "[Error] Failed to connect to postgres",
+      })
     })
   })
 })
