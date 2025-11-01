@@ -138,6 +138,18 @@ export const main = async () => {
       log(`[/mcp GET] Establishing new HTTP stream for session ${sessionId}`)
     }
 
+    // Clean up when stream connection closes. This forces session cleanup so
+    // next request (from existing thread) gets 404 and recreates session with
+    // fresh HTTP stream.
+    res.on("close", () => {
+      log(`[/mcp GET] Stream closed for session ${sessionId}`)
+
+      if (transports[sessionId]) {
+        log(`[/mcp GET] Cleaning up session ${sessionId}`)
+        delete transports[sessionId]
+      }
+    })
+
     const transport = transports[sessionId]
     await transport.handleRequest(req, res)
   })
