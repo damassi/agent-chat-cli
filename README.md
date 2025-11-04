@@ -1,6 +1,6 @@
 # Agent Chat Cli
 
-A minimalist, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview) and based on [damassi/agent-chat-cli](https://github.com/damassi/agent-chat-cli). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
+A minimalist, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
 
 Additionally, via inference, Agent Chat CLI supports lazy, turn-based MCP connections to keep token costs down and performance reasonable. The agent will only use those MCP servers you ask about, limiting the context that is sent up to the LLM. (After an MCP server is connected it remains connected, however.)
 
