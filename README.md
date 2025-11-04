@@ -1,4 +1,4 @@
-# Agent Chat ClI
+# Agent Chat CLI
 
 A minimalist, terminal-based chat CLI built to explore the new [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview). Terminal rendering is built on top of [React Ink](https://github.com/vadimdemedes/ink).
 
