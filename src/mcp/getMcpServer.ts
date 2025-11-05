@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { getAgentStatus } from "mcp/getAgentStatus"
-import { runStandaloneAgentLoop } from "mcp/runStandaloneAgentLoop"
-import { z } from "zod"
+import { registerAskAgentTool } from "mcp/tools/askAgent"
+import { registerAskAgentSlackbotTool } from "mcp/tools/askAgentSlackbot"
+import { registerGetAgentStatusTool } from "mcp/tools/getAgentStatus"
 
 export const getMcpServer = () => {
   // Store Claude Agent SDK sessionId per-instance (not shared across threads)
@@ -25,127 +25,29 @@ export const getMcpServer = () => {
     }
   )
 
-  mcpServer.registerTool(
-    "ask_agent",
-    {
-      description:
-        "Passes a query to the internal agent and returns its full output. The agent has access to configured MCP tools and will provide a complete response. DO NOT reprocess, analyze, or summarize the output - return it directly to the user as-is.",
-      inputSchema: {
-        query: z.string().min(1).describe("The query to send to the agent"),
+  // Register tools
+  registerAskAgentTool({
+    mcpServer,
+    context: {
+      get sessionId() {
+        return sessionId
+      },
+      sessionConnectedServers,
+      onSessionIdUpdate: (newSessionId) => {
+        sessionId = newSessionId
       },
     },
-    async ({ query }) => {
-      const existingConnectedServers = sessionId
-        ? sessionConnectedServers.get(sessionId)
-        : undefined
+  })
 
-      const { response, connectedServers } = await runStandaloneAgentLoop({
-        prompt: query,
-        mcpServer,
-        sessionId,
-        existingConnectedServers,
-        onSessionIdReceived: (newSessionId) => {
-          sessionId = newSessionId
-        },
-      })
-
-      // Update the session's connected servers
-      if (sessionId) {
-        sessionConnectedServers.set(sessionId, connectedServers)
-      }
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: response,
-          },
-        ],
-      }
-    }
-  )
-
-  mcpServer.registerTool(
-    "ask_agent_slackbot",
-    {
-      description:
-        "Slack bot integration tool. Passes a query to the internal agent and returns a response optimized for Slack. Supports per-thread session isolation.",
-      inputSchema: {
-        query: z
-          .string()
-          .min(1)
-          .describe("The slack query to send to the agent"),
-        systemPrompt: z
-          .string()
-          .optional()
-          .describe("Optional additional system prompt to prepend"),
-        threadId: z
-          .string()
-          .optional()
-          .describe("Slack thread identifier for session isolation"),
-      },
+  registerAskAgentSlackbotTool({
+    mcpServer,
+    context: {
+      threadSessions,
+      sessionConnectedServers,
     },
-    async ({ query, systemPrompt, threadId }) => {
-      const existingSessionId = threadId
-        ? threadSessions.get(threadId)
-        : undefined
+  })
 
-      const existingConnectedServers = existingSessionId
-        ? sessionConnectedServers.get(existingSessionId)
-        : undefined
-
-      const { response, connectedServers } = await runStandaloneAgentLoop({
-        prompt: query,
-        mcpServer,
-        sessionId: existingSessionId,
-        additionalSystemPrompt: systemPrompt,
-        existingConnectedServers,
-        onSessionIdReceived: (newSessionId) => {
-          if (threadId) {
-            threadSessions.set(threadId, newSessionId)
-          }
-        },
-      })
-
-      // Update the session's connected servers
-      if (existingSessionId || threadId) {
-        const sessionId = existingSessionId || threadSessions.get(threadId!)
-        if (sessionId) {
-          sessionConnectedServers.set(sessionId, connectedServers)
-        }
-      }
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: response,
-          },
-        ],
-      }
-    }
-  )
-
-  mcpServer.registerTool(
-    "get_agent_status",
-    {
-      description:
-        "Get the status of the agent including which MCP servers it has access to. Call this on initialization to see available servers.",
-      inputSchema: {},
-    },
-    async () => {
-      const status = await getAgentStatus(mcpServer)
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(status, null, 2),
-          },
-        ],
-      }
-    }
-  )
+  registerGetAgentStatusTool({ mcpServer })
 
   return mcpServer
 }

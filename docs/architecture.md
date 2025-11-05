@@ -10,6 +10,7 @@
 - **UI**: React + Ink (terminal UI)
 - **State Management**: Easy-peasy
 - **Agent SDK**: Claude Agent SDK
+- **MCP SDK**: [Model Context Protocol TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
 - **Language**: TypeScript
 
 ### Core Components
@@ -224,18 +225,21 @@ The CLI can also run as an MCP server itself, exposing the agent as a tool to ot
 
 **Shared MCP Infrastructure:**
 
-- [src/mcp/utils/getMcpServer.ts](../src/mcp/utils/getMcpServer.ts) - MCP server factory
+- [src/mcp/getMcpServer.ts](../src/mcp/getMcpServer.ts) - MCP server factory
   - Creates `McpServer` instance
-  - Registers `ask_agent` tool with Zod validation
-  - Registers `get_agent_status` tool for initialization
+  - Imports and registers tools from individual tool files
   - Shared by both stdio and HTTP modes
-- [src/mcp/utils/runStandaloneAgentLoop.ts](../src/mcp/utils/runStandaloneAgentLoop.ts) - Query execution
+- [src/mcp/tools/](../src/mcp/tools/) - Individual MCP tool definitions
+  - [askAgent.ts](../src/mcp/tools/askAgent.ts) - `ask_agent` tool with Zod validation (general purpose)
+  - [askAgentSlackbot.ts](../src/mcp/tools/askAgentSlackbot.ts) - `ask_agent_slackbot` tool with thread session support
+  - [getAgentStatus.ts](../src/mcp/tools/getAgentStatus.ts) - `get_agent_status` tool for initialization
+- [src/mcp/runStandaloneAgentLoop.ts](../src/mcp/runStandaloneAgentLoop.ts) - Query execution
   - Uses shared `runAgentLoop()` from agent integration
   - Manages message queue and session state
   - Processes streaming responses with logging notifications
   - Implements `onServerConnection` callback for dynamic server selection
   - Returns final text response
-- [src/mcp/utils/getAgentStatus.ts](../src/mcp/utils/getAgentStatus.ts) - Status utility
+- [src/mcp/getAgentStatus.ts](../src/mcp/getAgentStatus.ts) - Status utility
   - Initializes agent to get available MCP servers
   - Called by `get_agent_status` tool on client initialization
   - Returns session ID and MCP servers list
@@ -357,6 +361,44 @@ Uses `cosmiconfig` for flexible configuration loading:
   }
 }
 ```
+
+#### Specialized Subagents
+
+The CLI supports specialized subagents for domain-specific tasks using the [Claude Subagent SDK](https://docs.claude.com/en/docs/claude-code/sub-agents). Subagents are defined in `agent-chat-cli.config.ts` and automatically invoked when user queries match their domain.
+
+**Configuration:**
+
+- [src/utils/createAgent.ts](../src/utils/createAgent.ts) - Subagent factory function
+  - Creates subagent configuration with description, prompt, and MCP servers
+  - Description used by routing agent for intelligent matching
+  - Supports both local prompts (via `getPrompt`) and remote prompts (via `getRemotePrompt`)
+
+**Example:**
+
+```typescript
+agents: {
+  "sales-partner-sentiment-agent": createAgent({
+    description: "An expert SalesForce partner sentiment agent, designed to produce insights for renewal and churn conversations",
+    prompt: getPrompt("agents/sales-partner-sentiment-agent.md"),
+    mcpServers: ["salesforce"],
+  }),
+}
+```
+
+**Flow:**
+
+1. User sends query (e.g., "Analyze partner churn")
+2. Routing agent matches query to subagent based on description
+3. Required MCP servers (e.g., `salesforce`) are automatically connected
+4. Subagent is invoked with specialized prompt and tools
+5. Response returned to user
+
+**Benefits:**
+
+- Domain-specific expertise with tailored prompts
+- Scoped MCP server access for security and performance
+- Automatic routing based on query intent
+- Supports dynamic prompt management via remote APIs
 
 #### Tool Filtering
 
