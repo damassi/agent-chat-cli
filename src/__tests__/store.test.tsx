@@ -48,7 +48,7 @@ describe("Store", () => {
       expect(getState().sessionId).toBeUndefined()
       expect(getState().stats).toBeUndefined()
       expect(getState().pendingToolPermission).toBeUndefined()
-      expect(getState().abortController).toBeInstanceOf(AbortController)
+      expect(getState().abortController).toBeUndefined()
     })
 
     test("should have MessageQueue instance", () => {

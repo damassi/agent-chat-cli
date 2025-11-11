@@ -12,7 +12,7 @@ import { messageTypes } from "./runAgentLoop"
 interface SelectMcpServersOptions {
   abortController?: AbortController
   agents?: Record<string, AgentConfig>
-  alreadyConnectedServers?: Set<string>
+  connectedServers?: Set<string>
   enabledMcpServers: Record<string, any> | undefined
   onServerConnection?: (status: string) => void
   sessionId?: string
@@ -22,7 +22,7 @@ interface SelectMcpServersOptions {
 export const selectMcpServers = async ({
   abortController,
   agents,
-  alreadyConnectedServers = new Set(),
+  connectedServers = new Set(),
   enabledMcpServers,
   onServerConnection,
   sessionId,
@@ -38,7 +38,7 @@ export const selectMcpServers = async ({
 
   log(
     "[mcpServerSelectionAgent] Already connected:",
-    Array.from(alreadyConnectedServers).join(", ") || "none"
+    Array.from(connectedServers).join(", ") || "none"
   )
 
   const serverCapabilities = Object.entries(enabledMcpServers)
@@ -159,7 +159,7 @@ Examples:
   log("[mcpServerSelectionAgent] Selected MCP servers:", selectedServers)
 
   const newServers = selectedServers.filter(
-    (server) => !alreadyConnectedServers.has(server.toLowerCase())
+    (server) => !connectedServers.has(server.toLowerCase())
   )
 
   if (newServers.length > 0) {
@@ -172,7 +172,7 @@ Examples:
   }
 
   const allServers = new Set([
-    ...Array.from(alreadyConnectedServers),
+    ...Array.from(connectedServers),
     ...selectedServers,
   ])
 
@@ -212,7 +212,7 @@ Examples:
 
   // Update the connected servers set with new servers
   newServers.forEach((server) => {
-    alreadyConnectedServers.add(server.toLowerCase())
+    connectedServers.add(server.toLowerCase())
   })
 
   return {

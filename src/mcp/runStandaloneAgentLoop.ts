@@ -25,12 +25,17 @@ export const runStandaloneAgentLoop = async ({
   const messageQueue = new MessageQueue()
   const streamEnabled = config.stream ?? false
 
-  const { agentLoop, connectedServers } = await runAgentLoop({
+  const connectedServers = existingConnectedServers ?? new Set<string>()
+  const abortController = new AbortController()
+
+  const agentLoop = runAgentLoop({
+    abortController,
     additionalSystemPrompt,
     config,
-    existingConnectedServers,
+    connectedServers,
     messageQueue,
     sessionId,
+    userMessage: prompt,
     onServerConnection: async (status) => {
       await mcpServer.sendLoggingMessage({
         level: "info",
@@ -41,10 +46,6 @@ export const runStandaloneAgentLoop = async ({
       })
     },
   })
-
-  await new Promise((resolve) => setTimeout(resolve, 0))
-
-  messageQueue.sendMessage(prompt)
 
   let finalResponse = ""
   let assistantMessage = ""

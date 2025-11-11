@@ -1,48 +1,64 @@
-import { useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import { AgentStore } from "store"
+import { log } from "utils/logger"
 import { messageTypes, runAgentLoop } from "utils/runAgentLoop"
 
 export function useAgent() {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
-  const sessionId = AgentStore.useStoreState((state) => state.sessionId)
   const config = AgentStore.useStoreState((state) => state.config)
-  const abortController = AgentStore.useStoreState(
-    (state) => state.abortController
-  )
   const actions = AgentStore.useStoreActions((actions) => actions)
   const currentAssistantMessageRef = useRef("")
-  const abortControllerRef = useRef(abortController)
+  const sessionIdRef = useRef<string | undefined>(undefined)
+  const abortControllerRef = useRef<AbortController | undefined>(undefined)
+  const connectedServersRef = useRef<Set<string>>(new Set())
 
-  // Update ref when abort controller changes
-  abortControllerRef.current = abortController
+  const runQuery = useCallback(
+    async (userMessage: string) => {
+      if (abortControllerRef.current) {
+        log("[useAgent] Aborting existing query for new message:", userMessage)
 
-  useEffect(() => {
-    const streamEnabled = config.stream ?? false
+        // When a new message comes in, always abort the old one and start fresh
+        abortControllerRef.current.abort()
+      }
 
-    const runAgent = async () => {
-      const { agentLoop } = await runAgentLoop({
-        messageQueue,
-        sessionId,
-        config,
-        abortControllerRef,
-        onToolPermissionRequest: (toolName, input) => {
-          actions.setPendingToolPermission({ toolName, input })
-        },
-        onServerConnection: (status) => {
-          actions.addChatHistoryEntry({
-            type: "message",
-            role: "system",
-            content: status,
-          })
-        },
-        setIsProcessing: actions.setIsProcessing,
-      })
+      // Create fresh abort controller for this query
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+      actions.setAbortController(abortController)
+
+      const streamEnabled = config.stream ?? false
 
       try {
+        const agentLoop = runAgentLoop({
+          abortController,
+          config,
+          connectedServers: connectedServersRef.current,
+          messageQueue,
+          onToolPermissionRequest: (toolName, input) => {
+            actions.setPendingToolPermission({ toolName, input })
+          },
+          onServerConnection: (status) => {
+            actions.addChatHistoryEntry({
+              type: "message",
+              role: "system",
+              content: status,
+            })
+          },
+          sessionId: sessionIdRef.current,
+          setIsProcessing: actions.setIsProcessing,
+          userMessage,
+        })
+
         for await (const message of agentLoop) {
+          if (abortController.signal.aborted) {
+            log("[useAgent] Query was aborted, stopping message processing")
+            return
+          }
+
           switch (true) {
             case message.type === messageTypes.SYSTEM &&
               message.subtype === messageTypes.INIT: {
+              sessionIdRef.current = message.session_id
               actions.setSessionId(message.session_id)
               actions.handleMcpServerStatus(message.mcp_servers)
 
@@ -127,6 +143,12 @@ export function useAgent() {
           }
         }
       } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          actions.setIsProcessing(false)
+          return
+        }
+
+        // Handle other errors
         if (
           error instanceof Error &&
           !error.message.includes("process aborted by user")
@@ -136,8 +158,18 @@ export function useAgent() {
 
         actions.setIsProcessing(false)
       }
-    }
+    },
+    [config, messageQueue, actions]
+  )
 
-    runAgent()
-  }, [])
+  // Start listening for new messages from input
+  useEffect(() => {
+    const unsubscribe = messageQueue.subscribe((userMessage) => {
+      setTimeout(() => {
+        runQuery(userMessage)
+      }, 0)
+    })
+
+    return unsubscribe
+  }, [messageQueue, runQuery])
 }

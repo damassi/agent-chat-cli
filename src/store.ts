@@ -112,7 +112,7 @@ export interface StoreModel {
 }
 
 export const AgentStore = createContextStore<StoreModel>({
-  abortController: new AbortController(),
+  abortController: undefined,
   chatHistory: [],
   config: null as unknown as AgentChatConfig,
   currentAssistantMessage: "",
@@ -142,7 +142,9 @@ export const AgentStore = createContextStore<StoreModel>({
   // Actions
   abortRequest: action((state) => {
     state.abortController?.abort()
-    state.abortController = new AbortController()
+    state.abortController = undefined
+    state.currentAssistantMessage = ""
+    state.stats = "User aborted the request."
     state.isProcessing = false
   }),
 

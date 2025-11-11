@@ -6,15 +6,16 @@ import { messageTypes, runAgentLoop } from "utils/runAgentLoop"
 export const getAgentStatus = async (mcpServer?: McpServer) => {
   const config = await loadConfig()
   const messageQueue = new MessageQueue()
+  const abortController = new AbortController()
+  const connectedServers = new Set<string>()
 
-  const { agentLoop } = await runAgentLoop({
-    messageQueue,
+  const agentLoop = runAgentLoop({
+    abortController,
     config,
+    connectedServers,
+    messageQueue,
+    userMessage: "status",
   })
-
-  await new Promise((resolve) => setTimeout(resolve, 0))
-
-  messageQueue.sendMessage("status")
 
   for await (const message of agentLoop) {
     if (

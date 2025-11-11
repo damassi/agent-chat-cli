@@ -1,5 +1,3 @@
-import { Box, Text, useInput } from "ink"
-import Spinner from "ink-spinner"
 import { ChatHeader } from "components/ChatHeader"
 import { Markdown } from "components/Markdown"
 import { Stats } from "components/Stats"
@@ -8,6 +6,8 @@ import { ToolUses } from "components/ToolUses"
 import { UserInput } from "components/UserInput"
 import { useAgent } from "hooks/useAgent"
 import { useMcpClient } from "hooks/useMcpClient"
+import { Box, Text, useInput } from "ink"
+import Spinner from "ink-spinner"
 import { AgentStore } from "store"
 
 export const AgentChat: React.FC = () => {
@@ -92,20 +92,22 @@ export const AgentChat: React.FC = () => {
 
           case state.isProcessing: {
             return (
-              <Text dimColor>
-                <Text color="cyan">
-                  <Spinner type="balloon" />
+              <>
+                <Text dimColor>
+                  <Text color="cyan">
+                    <Spinner type="balloon" />
+                  </Text>
+                  {" Agent is thinking..."}
                 </Text>
-                {" Agent is thinking..."}
-              </Text>
-            )
-          }
 
-          default: {
-            return <UserInput />
+                <Box marginBottom={1} />
+              </>
+            )
           }
         }
       })()}
+
+      <UserInput />
 
       <Box marginTop={1} />
     </Box>
