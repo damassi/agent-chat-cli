@@ -33,4 +33,11 @@ export class MessageQueue extends EventEmitter {
   hasPendingRequests(): boolean {
     return this.listenerCount("message") > 0
   }
+
+  subscribe(callback: (message: string) => void): () => void {
+    this.on("message", callback)
+    return () => {
+      this.off("message", callback)
+    }
+  }
 }

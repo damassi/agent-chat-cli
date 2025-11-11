@@ -35,6 +35,12 @@ export const UserInput: React.FC = () => {
     })
 
     actions.sendMessage(value)
+
+    // Slight delay just in case user has aborted request via second message
+    setTimeout(() => {
+      actions.setIsProcessing(true)
+    }, 100)
+
     reset()
   }
 
