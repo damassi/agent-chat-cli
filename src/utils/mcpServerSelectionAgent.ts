@@ -5,6 +5,7 @@ import {
   type SDKUserMessage,
 } from "@anthropic-ai/claude-agent-sdk"
 import type { AgentConfig } from "utils/createAgent"
+import type { McpServerStatus } from "store"
 import { log } from "utils/logger"
 import { z } from "zod"
 import { messageTypes } from "./runAgentLoop"
@@ -14,6 +15,7 @@ interface SelectMcpServersOptions {
   agents?: Record<string, AgentConfig>
   inferredServers?: Set<string>
   enabledMcpServers: Record<string, any> | undefined
+  mcpServers?: McpServerStatus[]
   onServerConnection?: (status: string) => void
   sessionId?: string
   userMessage: string
@@ -24,6 +26,7 @@ export const inferMcpServers = async ({
   agents,
   inferredServers = new Set(),
   enabledMcpServers,
+  mcpServers: mcpServerStatuses = [],
   onServerConnection,
   sessionId,
   userMessage,
@@ -158,7 +161,33 @@ Examples:
 
   log("[mcpServerSelectionAgent] Selected MCP servers:", selectedServers)
 
-  const newServers = selectedServers.filter(
+  const isRetryRequest = /retry|reconnect/i.test(userMessage)
+
+  const failedServers = new Set(
+    mcpServerStatuses
+      .filter((s) => s.status === "failed")
+      .map((s) => s.name.toLowerCase())
+  )
+
+  const serversAfterFailureFilter = isRetryRequest
+    ? selectedServers
+    : selectedServers.filter(
+        (server) => !failedServers.has(server.toLowerCase())
+      )
+
+  if (!isRetryRequest && failedServers.size > 0) {
+    const filteredOut = selectedServers.filter((server) =>
+      failedServers.has(server.toLowerCase())
+    )
+    if (filteredOut.length > 0) {
+      log(
+        "[mcpServerSelectionAgent] Excluding failed servers (not a retry):",
+        filteredOut.join(", ")
+      )
+    }
+  }
+
+  const newServers = serversAfterFailureFilter.filter(
     (server) => !inferredServers.has(server.toLowerCase())
   )
 
@@ -173,7 +202,7 @@ Examples:
 
   const allServers = new Set([
     ...Array.from(inferredServers),
-    ...selectedServers,
+    ...serversAfterFailureFilter,
   ])
 
   const mcpServers =
