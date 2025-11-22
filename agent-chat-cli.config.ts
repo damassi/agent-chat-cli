@@ -25,7 +25,7 @@ const config: AgentChatConfig = {
     },
     github: {
       description:
-        "GitHub MCP tools to search code, PRs, issues; discover documentation in repo docs/; find deployment guides and code examples.",
+        "GitHub MCP tools to search remote code, PRs, issues; discover documentation in remote repo docs/; find deployment guides and code examples.",
       prompt: getPrompt("github.md"),
       command: "bunx",
       args: [

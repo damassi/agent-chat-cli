@@ -65,6 +65,7 @@ export async function* runAgentLoop({
     agents: config.agents,
     inferredServers,
     enabledMcpServers,
+    mcpServers,
     onServerConnection,
     sessionId,
     userMessage,
