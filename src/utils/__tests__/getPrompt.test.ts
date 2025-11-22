@@ -191,8 +191,9 @@ describe("buildSystemPrompt", () => {
       config,
     })
 
-    expect(prompt).not.toContain("Available MCP Servers")
-    expect(prompt).not.toContain("Unavailable MCP Servers")
+    expect(prompt).toContain("CRITICAL: MCP Server Connection Status Check")
+    expect(prompt).not.toContain("# Available MCP Servers")
+    expect(prompt).not.toContain("# Unavailable MCP Servers")
   })
 
   test("should handle empty inferred servers set", async () => {

@@ -58,6 +58,18 @@ export const buildSystemPrompt = async ({
     parts.push(additionalSystemPrompt)
   }
 
+  parts.push(`# CRITICAL: MCP Server Connection Status Check
+
+**BEFORE responding to ANY request involving an inferred MCP server, you MUST:**
+
+1. Check the "Unavailable MCP Servers" section
+2. If the requested server is listed as FAILED/unavailable:
+    - IMMEDIATELY inform the user the server failed to connect in a friendly way
+    - State that NO tools are available for that server
+    - DO NOT offer functionality or ask how they'd like to use it
+    - STOP processing that request
+`)
+
   if (mcpServers.length > 0) {
     // Add connection status sections first as these are the source of truth.
     // Inference is secondary.
