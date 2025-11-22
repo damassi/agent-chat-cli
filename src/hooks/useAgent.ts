@@ -161,7 +161,7 @@ export function useAgent() {
         actions.setIsProcessing(false)
       }
     },
-    [config, messageQueue, actions]
+    [config, mcpServers, messageQueue, actions]
   )
 
   // Start listening for new messages from input
