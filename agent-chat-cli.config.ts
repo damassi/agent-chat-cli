@@ -12,6 +12,7 @@ const config: AgentChatConfig = {
       description: "A claude subagent designed to show off functionality",
       prompt: getPrompt("agents/demo-agent.md"),
       mcpServers: [],
+      disallowedTools: ["Bash"],
     }),
   },
 

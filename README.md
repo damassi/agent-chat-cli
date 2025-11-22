@@ -223,6 +223,7 @@ const config = {
         "An expert SalesForce partner sentiment agent, designed to produce insights for renewal and churn conversations",
       prompt: getPrompt("agents/sales-partner-sentiment-agent.md"),
       mcpServers: ["salesforce"],
+      disallowedTools: ["Bash"],
     }),
   },
   mcpServers: {

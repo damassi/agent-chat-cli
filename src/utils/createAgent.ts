@@ -1,6 +1,6 @@
 import type { AgentDefinition } from "@anthropic-ai/claude-agent-sdk"
 
-export interface AgentConfig {
+export interface AgentConfig extends Omit<AgentDefinition, "prompt"> {
   description: string
   prompt: () => Promise<string>
   mcpServers?: string[]
