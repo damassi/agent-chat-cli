@@ -2,6 +2,7 @@ import { EventEmitter } from "events"
 
 export class MessageQueue extends EventEmitter {
   private messageBuffer: string[] = []
+  private permissionBuffer: string[] = []
 
   constructor() {
     super()
@@ -25,13 +26,37 @@ export class MessageQueue extends EventEmitter {
     }
   }
 
+  async waitForPermissionResponse(): Promise<string> {
+    if (this.permissionBuffer.length > 0) {
+      return this.permissionBuffer.shift()!
+    }
+
+    return new Promise<string>((resolve) => {
+      this.once("permissionResponse", resolve)
+    })
+  }
+
+  sendPermissionResponse(value: string): void {
+    if (this.listenerCount("permissionResponse") > 0) {
+      this.emit("permissionResponse", value)
+    } else {
+      this.permissionBuffer.push(value)
+    }
+  }
+
   clear(): void {
     this.removeAllListeners("message")
+    this.removeAllListeners("permissionResponse")
     this.messageBuffer = []
+    this.permissionBuffer = []
   }
 
   hasPendingRequests(): boolean {
     return this.listenerCount("message") > 0
+  }
+
+  hasPendingPermissionRequest(): boolean {
+    return this.listenerCount("permissionResponse") > 0
   }
 
   subscribe(callback: (message: string) => void): () => void {

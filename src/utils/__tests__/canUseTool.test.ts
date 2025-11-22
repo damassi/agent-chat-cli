@@ -16,7 +16,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("yes")
+    queue.sendPermissionResponse("yes")
     const result = await promise
 
     expect(result.behavior).toBe("allow")
@@ -37,7 +37,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("y")
+    queue.sendPermissionResponse("y")
     const result = await promise
 
     expect(result.behavior).toBe("allow")
@@ -55,7 +55,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("allow")
+    queue.sendPermissionResponse("allow")
     const result = await promise
 
     expect(result.behavior).toBe("allow")
@@ -73,7 +73,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("no")
+    queue.sendPermissionResponse("no")
     const result = await promise
 
     expect(result.behavior).toBe("deny")
@@ -95,7 +95,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("n")
+    queue.sendPermissionResponse("n")
     const result = await promise
 
     expect(result.behavior).toBe("deny")
@@ -113,7 +113,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("deny")
+    queue.sendPermissionResponse("deny")
     const result = await promise
 
     expect(result.behavior).toBe("deny")
@@ -131,7 +131,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("YES")
+    queue.sendPermissionResponse("YES")
     const result = await promise
 
     expect(result.behavior).toBe("allow")
@@ -149,7 +149,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("  yes  ")
+    queue.sendPermissionResponse("  yes  ")
     const result = await promise
 
     expect(result.behavior).toBe("allow")
@@ -167,7 +167,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("do something else")
+    queue.sendPermissionResponse("do something else")
     const result = await promise
 
     expect(result.behavior).toBe("deny")
@@ -193,7 +193,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("yes")
+    queue.sendPermissionResponse("yes")
     await promise
 
     expect(callback).toHaveBeenCalledTimes(1)
@@ -212,7 +212,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("yes")
+    queue.sendPermissionResponse("yes")
     const result = await promise
 
     expect(result.behavior).toBe("allow")
@@ -250,7 +250,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("yes")
+    queue.sendPermissionResponse("yes")
     const result = await promise
 
     expect(result.behavior).toBe("allow")
@@ -275,7 +275,7 @@ describe("createCanUseTool", () => {
       }
     )
 
-    queue.sendMessage("no")
+    queue.sendPermissionResponse("no")
     await promise
     await new Promise((resolve) => setTimeout(resolve, 100))
 

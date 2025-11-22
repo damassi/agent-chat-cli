@@ -19,19 +19,8 @@ export const ToolPermissionPrompt: React.FC = () => {
   const handleSubmit = (value: string) => {
     const response = value.trim() || "yes"
 
-    // Resolve ALL pending tool permission requests with the same response
-    // This handles the case where multiple tools are called in parallel
-    while (
-      store.messageQueue.hasPendingRequests() &&
-      store.pendingToolPermission
-    ) {
-      store.messageQueue.sendMessage(response)
-
-      // Check if there are still more requests after sending
-      if (!store.messageQueue.hasPendingRequests()) {
-        break
-      }
-    }
+    // Send the permission response to the waiting canUseTool call
+    store.messageQueue.sendPermissionResponse(response)
 
     actions.setPendingToolPermission(undefined)
     actions.setInput("")
