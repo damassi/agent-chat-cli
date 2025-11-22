@@ -25,7 +25,7 @@ export const createCanUseTool = (options: CanUseToolOptions) => {
       onToolPermissionRequest(toolName, input)
     }
 
-    const userResponse = await messageQueue.waitForMessage()
+    const userResponse = await messageQueue.waitForPermissionResponse()
     const response = userResponse.toLowerCase().trim()
 
     const CONFIRM = ["y", "yes", "allow"].includes(response)

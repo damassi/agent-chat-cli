@@ -107,7 +107,7 @@ export const AgentChat: React.FC = () => {
         }
       })()}
 
-      <UserInput />
+      {!state.pendingToolPermission && <UserInput />}
 
       <Box marginTop={1} />
     </Box>
