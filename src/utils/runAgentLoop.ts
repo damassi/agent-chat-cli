@@ -1,12 +1,12 @@
 import { query } from "@anthropic-ai/claude-agent-sdk"
-import type { AgentChatConfig } from "store"
+import type { AgentChatConfig, McpServerStatus } from "store"
 import { createCanUseTool } from "utils/canUseTool"
 import { createSDKAgents } from "utils/createAgent"
 import { getEnabledMcpServers } from "utils/getEnabledMcpServers"
 import { buildSystemPrompt } from "utils/getPrompt"
 import { getDisallowedTools } from "utils/getToolInfo"
 import { log } from "utils/logger"
-import { selectMcpServers } from "utils/mcpServerSelectionAgent"
+import { inferMcpServers } from "utils/mcpServerSelectionAgent"
 import type { MessageQueue } from "utils/MessageQueue"
 
 export const messageTypes = {
@@ -26,7 +26,8 @@ export interface RunAgentLoopOptions {
   abortController: AbortController
   additionalSystemPrompt?: string
   config: AgentChatConfig
-  connectedServers: Set<string>
+  inferredServers: Set<string>
+  mcpServers?: McpServerStatus[]
   messageQueue: MessageQueue
   onServerConnection?: (status: string) => void
   onToolPermissionRequest?: (toolName: string, input: any) => void
@@ -39,7 +40,8 @@ export async function* runAgentLoop({
   abortController,
   additionalSystemPrompt,
   config,
-  connectedServers,
+  inferredServers,
+  mcpServers,
   messageQueue,
   onServerConnection,
   onToolPermissionRequest,
@@ -58,10 +60,10 @@ export async function* runAgentLoop({
   const disallowedTools = getDisallowedTools(config)
   const enabledMcpServers = getEnabledMcpServers(config.mcpServers)
 
-  const { mcpServers } = await selectMcpServers({
+  const inferenceResult = await inferMcpServers({
     abortController,
     agents: config.agents,
-    connectedServers,
+    inferredServers,
     enabledMcpServers,
     onServerConnection,
     sessionId,
@@ -71,7 +73,8 @@ export async function* runAgentLoop({
   const systemPrompt = await buildSystemPrompt({
     additionalSystemPrompt,
     config,
-    connectedServers,
+    inferredServers,
+    mcpServers,
   })
 
   const agents = await createSDKAgents(config.agents)
@@ -84,7 +87,7 @@ export async function* runAgentLoop({
       canUseTool,
       disallowedTools,
       includePartialMessages: config.stream ?? false,
-      mcpServers,
+      mcpServers: inferenceResult.mcpServers,
       model: config.model ?? "haiku",
       permissionMode: config.permissionMode ?? "default",
       resume: sessionId,

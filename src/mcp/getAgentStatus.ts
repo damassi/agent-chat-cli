@@ -7,12 +7,12 @@ export const getAgentStatus = async (mcpServer?: McpServer) => {
   const config = await loadConfig()
   const messageQueue = new MessageQueue()
   const abortController = new AbortController()
-  const connectedServers = new Set<string>()
+  const inferredServers = new Set<string>()
 
   const agentLoop = runAgentLoop({
     abortController,
     config,
-    connectedServers,
+    inferredServers,
     messageQueue,
     userMessage: "status",
   })

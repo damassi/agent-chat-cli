@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import type { McpServerStatus } from "store"
 import { loadConfig } from "utils/loadConfig"
 import { log } from "utils/logger"
 import { MessageQueue } from "utils/MessageQueue"
@@ -6,7 +7,8 @@ import { contentTypes, messageTypes, runAgentLoop } from "utils/runAgentLoop"
 
 interface RunQueryOptions {
   additionalSystemPrompt?: string
-  existingConnectedServers?: Set<string>
+  existingInferredServers?: Set<string>
+  existingMcpServers?: McpServerStatus[]
   mcpServer: McpServer
   onSessionIdReceived?: (sessionId: string) => void
   prompt: string
@@ -15,7 +17,8 @@ interface RunQueryOptions {
 
 export const runStandaloneAgentLoop = async ({
   additionalSystemPrompt,
-  existingConnectedServers,
+  existingInferredServers,
+  existingMcpServers,
   mcpServer,
   onSessionIdReceived,
   prompt,
@@ -25,17 +28,16 @@ export const runStandaloneAgentLoop = async ({
   const messageQueue = new MessageQueue()
   const streamEnabled = config.stream ?? false
 
-  const connectedServers = existingConnectedServers ?? new Set<string>()
+  const inferredServers = existingInferredServers ?? new Set<string>()
   const abortController = new AbortController()
 
   const agentLoop = runAgentLoop({
     abortController,
     additionalSystemPrompt,
     config,
-    connectedServers,
+    inferredServers,
+    mcpServers: existingMcpServers,
     messageQueue,
-    sessionId,
-    userMessage: prompt,
     onServerConnection: async (status) => {
       await mcpServer.sendLoggingMessage({
         level: "info",
@@ -45,6 +47,8 @@ export const runStandaloneAgentLoop = async ({
         }),
       })
     },
+    sessionId,
+    userMessage: prompt,
   })
 
   let finalResponse = ""
@@ -155,7 +159,7 @@ export const runStandaloneAgentLoop = async ({
 
           return {
             response: finalResponse,
-            connectedServers,
+            inferredServers,
           }
         }
       }
@@ -166,6 +170,6 @@ export const runStandaloneAgentLoop = async ({
 
   return {
     response: finalResponse,
-    connectedServers,
+    inferredServers,
   }
 }

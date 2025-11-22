@@ -1,10 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import type { McpServerStatus } from "store"
 import { runStandaloneAgentLoop } from "mcp/runStandaloneAgentLoop"
 import { z } from "zod"
 
 export interface AskAgentSlackbotContext {
   threadSessions: Map<string, string>
-  sessionConnectedServers: Map<string, Set<string>>
+  sessionInferredServers: Map<string, Set<string>>
+  sessionMcpServers: Map<string, McpServerStatus[]>
 }
 
 export interface RegisterAskAgentSlackbotToolProps {
@@ -41,16 +43,21 @@ export const registerAskAgentSlackbotTool = ({
         ? context.threadSessions.get(threadId)
         : undefined
 
-      const existingConnectedServers = existingSessionId
-        ? context.sessionConnectedServers.get(existingSessionId)
+      const existingInferredServers = existingSessionId
+        ? context.sessionInferredServers.get(existingSessionId)
         : undefined
 
-      const { response, connectedServers } = await runStandaloneAgentLoop({
+      const existingMcpServers = existingSessionId
+        ? context.sessionMcpServers.get(existingSessionId)
+        : undefined
+
+      const { response, inferredServers } = await runStandaloneAgentLoop({
         prompt: query,
         mcpServer,
         sessionId: existingSessionId,
         additionalSystemPrompt: systemPrompt,
-        existingConnectedServers,
+        existingInferredServers,
+        existingMcpServers,
         onSessionIdReceived: (newSessionId) => {
           if (threadId) {
             context.threadSessions.set(threadId, newSessionId)
@@ -58,12 +65,12 @@ export const registerAskAgentSlackbotTool = ({
         },
       })
 
-      // Update the session's connected servers
+      // Update the session's inferred servers
       if (existingSessionId || threadId) {
         const sessionId =
           existingSessionId || context.threadSessions.get(threadId!)
         if (sessionId) {
-          context.sessionConnectedServers.set(sessionId, connectedServers)
+          context.sessionInferredServers.set(sessionId, inferredServers)
         }
       }
 

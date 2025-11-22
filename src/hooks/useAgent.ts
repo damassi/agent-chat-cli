@@ -6,11 +6,12 @@ import { messageTypes, runAgentLoop } from "utils/runAgentLoop"
 export function useAgent() {
   const messageQueue = AgentStore.useStoreState((state) => state.messageQueue)
   const config = AgentStore.useStoreState((state) => state.config)
+  const mcpServers = AgentStore.useStoreState((state) => state.mcpServers)
   const actions = AgentStore.useStoreActions((actions) => actions)
   const currentAssistantMessageRef = useRef("")
   const sessionIdRef = useRef<string | undefined>(undefined)
   const abortControllerRef = useRef<AbortController | undefined>(undefined)
-  const connectedServersRef = useRef<Set<string>>(new Set())
+  const inferredServersRef = useRef<Set<string>>(new Set())
 
   const runQuery = useCallback(
     async (userMessage: string) => {
@@ -32,7 +33,8 @@ export function useAgent() {
         const agentLoop = runAgentLoop({
           abortController,
           config,
-          connectedServers: connectedServersRef.current,
+          inferredServers: inferredServersRef.current,
+          mcpServers,
           messageQueue,
           onToolPermissionRequest: (toolName, input) => {
             actions.setPendingToolPermission({ toolName, input })

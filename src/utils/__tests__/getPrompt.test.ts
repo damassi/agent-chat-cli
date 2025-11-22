@@ -145,47 +145,80 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("GitHub instructions")
   })
 
-  test("should include connected MCP servers in system prompt", async () => {
+  test("should include inferred MCP servers in system prompt", async () => {
     const config: AgentChatConfig = {
       mcpServers: {},
     }
-    const connectedServers = new Set(["github", "gitlab"])
+    const inferredServers = new Set(["github", "gitlab"])
 
     const prompt = await buildSystemPrompt({
       config,
-      connectedServers,
+      inferredServers,
     })
 
-    expect(prompt).toContain("Connected MCP Servers")
+    expect(prompt).toContain("Server Selection Context")
     expect(prompt).toContain("github, gitlab")
   })
 
-  test("should handle empty connected servers set", async () => {
+  test("should include connected and failed MCP servers sections", async () => {
     const config: AgentChatConfig = {
       mcpServers: {},
     }
-    const connectedServers = new Set<string>()
+    const mcpServers = [
+      { name: "github", status: "connected" },
+      { name: "gitlab", status: "failed" },
+    ]
 
     const prompt = await buildSystemPrompt({
       config,
-      connectedServers,
+      mcpServers,
     })
 
-    expect(prompt).toContain("Connected MCP Servers")
-    expect(prompt).toContain(
-      "The following MCP servers are currently connected and available:"
-    )
+    expect(prompt).toContain("Available MCP Servers")
+    expect(prompt).toContain("- github")
+    expect(prompt).toContain("ONLY servers with available tools")
+    expect(prompt).toContain("Unavailable MCP Servers")
+    expect(prompt).toContain("- gitlab")
+    expect(prompt).toContain("These servers have NO tools available")
   })
 
-  test("should work without connectedServers parameter", async () => {
+  test("should not include connection status sections when no mcpServers provided", async () => {
+    const config: AgentChatConfig = {
+      mcpServers: {},
+    }
+
+    const prompt = await buildSystemPrompt({
+      config,
+    })
+
+    expect(prompt).not.toContain("Available MCP Servers")
+    expect(prompt).not.toContain("Unavailable MCP Servers")
+  })
+
+  test("should handle empty inferred servers set", async () => {
+    const config: AgentChatConfig = {
+      mcpServers: {},
+    }
+    const inferredServers = new Set<string>()
+
+    const prompt = await buildSystemPrompt({
+      config,
+      inferredServers,
+    })
+
+    expect(prompt).toContain("Current date:")
+    expect(prompt).not.toContain("Server Selection Context")
+  })
+
+  test("should work without inferredServers parameter", async () => {
     const config: AgentChatConfig = {
       mcpServers: {},
     }
 
     const prompt = await buildSystemPrompt({ config })
 
-    expect(prompt).toContain("Connected MCP Servers")
     expect(prompt).toContain("Current date:")
+    expect(prompt).not.toContain("Server Selection Context")
   })
 
   test("should skip disabled MCP servers", async () => {
