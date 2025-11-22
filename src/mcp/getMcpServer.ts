@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import type { McpServerStatus } from "store"
 import { registerAskAgentTool } from "mcp/tools/askAgent"
 import { registerAskAgentSlackbotTool } from "mcp/tools/askAgentSlackbot"
 import { registerGetAgentStatusTool } from "mcp/tools/getAgentStatus"
@@ -10,8 +11,11 @@ export const getMcpServer = () => {
   // Map thread IDs to Claude Agent SDK session IDs for per-thread isolation
   const threadSessions = new Map<string, string>()
 
-  // Map session IDs to connected MCP servers for persistence across requests
-  const sessionConnectedServers = new Map<string, Set<string>>()
+  // Map session IDs to inferred MCP servers for persistence across requests
+  const sessionInferredServers = new Map<string, Set<string>>()
+
+  // Map session IDs to MCP server statuses for persistence across requests
+  const sessionMcpServers = new Map<string, McpServerStatus[]>()
 
   const mcpServer = new McpServer(
     {
@@ -32,7 +36,8 @@ export const getMcpServer = () => {
       get sessionId() {
         return sessionId
       },
-      sessionConnectedServers,
+      sessionInferredServers,
+      sessionMcpServers,
       onSessionIdUpdate: (newSessionId) => {
         sessionId = newSessionId
       },
@@ -43,7 +48,8 @@ export const getMcpServer = () => {
     mcpServer,
     context: {
       threadSessions,
-      sessionConnectedServers,
+      sessionInferredServers,
+      sessionMcpServers,
     },
   })
 

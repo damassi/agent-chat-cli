@@ -46,7 +46,7 @@ export const UserInput: React.FC = () => {
 
   return (
     <Box>
-      <BlinkCaret />
+      <BlinkCaret enabled={!store.isProcessing} />
 
       <TextInput
         value={store.input}

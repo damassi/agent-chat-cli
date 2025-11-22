@@ -1,10 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import type { McpServerStatus } from "store"
 import { runStandaloneAgentLoop } from "mcp/runStandaloneAgentLoop"
 import { z } from "zod"
 
 export interface AskAgentContext {
   sessionId?: string
-  sessionConnectedServers: Map<string, Set<string>>
+  sessionInferredServers: Map<string, Set<string>>
+  sessionMcpServers: Map<string, McpServerStatus[]>
   onSessionIdUpdate: (sessionId: string) => void
 }
 
@@ -27,23 +29,28 @@ export const registerAskAgentTool = ({
       },
     },
     async ({ query }) => {
-      const existingConnectedServers = context.sessionId
-        ? context.sessionConnectedServers.get(context.sessionId)
+      const existingInferredServers = context.sessionId
+        ? context.sessionInferredServers.get(context.sessionId)
         : undefined
 
-      const { response, connectedServers } = await runStandaloneAgentLoop({
+      const existingMcpServers = context.sessionId
+        ? context.sessionMcpServers.get(context.sessionId)
+        : undefined
+
+      const { response, inferredServers } = await runStandaloneAgentLoop({
         prompt: query,
         mcpServer,
         sessionId: context.sessionId,
-        existingConnectedServers,
+        existingInferredServers,
+        existingMcpServers,
         onSessionIdReceived: (newSessionId) => {
           context.onSessionIdUpdate(newSessionId)
         },
       })
 
-      // Update the session's connected servers
+      // Update the session's inferred servers
       if (context.sessionId) {
-        context.sessionConnectedServers.set(context.sessionId, connectedServers)
+        context.sessionInferredServers.set(context.sessionId, inferredServers)
       }
 
       return {
