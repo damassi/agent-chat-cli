@@ -1,6 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk"
 import type { AgentChatConfig } from "store"
 import { createCanUseTool } from "utils/canUseTool"
+import { createSDKAgents } from "utils/createAgent"
 import { getEnabledMcpServers } from "utils/getEnabledMcpServers"
 import { buildSystemPrompt } from "utils/getPrompt"
 import { getDisallowedTools } from "utils/getToolInfo"
@@ -73,10 +74,13 @@ export async function* runAgentLoop({
     connectedServers,
   })
 
+  const agents = await createSDKAgents(config.agents)
+
   const turnResponse = query({
     prompt: userMessage,
     options: {
       abortController,
+      agents,
       canUseTool,
       disallowedTools,
       includePartialMessages: config.stream ?? false,
