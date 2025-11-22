@@ -28,7 +28,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "^0.1.30",
+    "@anthropic-ai/claude-agent-sdk": "^0.1.50",
     "@modelcontextprotocol/sdk": "^1.18.2",
     "cors": "^2.8.5",
     "cosmiconfig": "^9.0.0",
