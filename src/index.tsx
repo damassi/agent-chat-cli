@@ -11,7 +11,10 @@ const main = () => {
   render(
     <AgentStore.Provider>
       <App />
-    </AgentStore.Provider>
+    </AgentStore.Provider>,
+    {
+      incrementalRendering: true,
+    }
   )
 }
 
