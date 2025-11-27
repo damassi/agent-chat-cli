@@ -143,7 +143,18 @@ export const AgentStore = createContextStore<StoreModel>({
   abortRequest: action((state) => {
     state.abortController?.abort()
     state.abortController = undefined
+
+    if (state.currentAssistantMessage.trim()) {
+      // Persist what has been generated so far
+      state.chatHistory.push({
+        type: "message",
+        role: "assistant",
+        content: state.currentAssistantMessage,
+      })
+    }
+
     state.currentAssistantMessage = ""
+
     state.stats = "User aborted the request."
     state.isProcessing = false
   }),

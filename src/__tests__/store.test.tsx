@@ -387,6 +387,110 @@ describe("Store", () => {
 
       expect(getState().isProcessing).toBe(false)
     })
+
+    test("abortRequest should save partially streamed message to chat history", () => {
+      const { getState, actions } = setup()
+
+      const controller = new AbortController()
+      actions.setAbortController(controller)
+      actions.setIsProcessing(true)
+      actions.setCurrentAssistantMessage("This is a partial response...")
+
+      actions.abortRequest()
+
+      const state = getState()
+
+      // Message should be saved to chat history
+      expect(state.chatHistory).toHaveLength(1)
+      expect(state.chatHistory[0]).toEqual({
+        type: "message",
+        role: "assistant",
+        content: "This is a partial response...",
+      })
+
+      // Current message should be cleared
+      expect(state.currentAssistantMessage).toBe("")
+
+      // Stats should indicate abort
+      expect(state.stats).toBe("User aborted the request.")
+
+      // Processing should be stopped
+      expect(state.isProcessing).toBe(false)
+    })
+
+    test("abortRequest should not save empty message to chat history", () => {
+      const { getState, actions } = setup()
+
+      const controller = new AbortController()
+      actions.setAbortController(controller)
+      actions.setIsProcessing(true)
+      actions.setCurrentAssistantMessage("")
+
+      actions.abortRequest()
+
+      const state = getState()
+
+      // No message should be added to history
+      expect(state.chatHistory).toHaveLength(0)
+
+      // Current message should still be empty
+      expect(state.currentAssistantMessage).toBe("")
+
+      // Stats should still indicate abort
+      expect(state.stats).toBe("User aborted the request.")
+    })
+
+    test("abortRequest should not save whitespace-only message to chat history", () => {
+      const { getState, actions } = setup()
+
+      const controller = new AbortController()
+      actions.setAbortController(controller)
+      actions.setIsProcessing(true)
+      actions.setCurrentAssistantMessage("   \n  \t  ")
+
+      actions.abortRequest()
+
+      const state = getState()
+
+      // No message should be added to history (whitespace is trimmed)
+      expect(state.chatHistory).toHaveLength(0)
+
+      // Current message should still be empty
+      expect(state.currentAssistantMessage).toBe("")
+    })
+
+    test("abortRequest should preserve existing chat history when adding partial message", () => {
+      const { getState, actions } = setup()
+
+      // Add existing history
+      actions.addChatHistoryEntry({
+        type: "message",
+        role: "user",
+        content: "Hello",
+      })
+
+      const controller = new AbortController()
+      actions.setAbortController(controller)
+      actions.setIsProcessing(true)
+      actions.setCurrentAssistantMessage("Partial response")
+
+      actions.abortRequest()
+
+      const state = getState()
+
+      // Should have both messages
+      expect(state.chatHistory).toHaveLength(2)
+      expect(state.chatHistory[0]).toEqual({
+        type: "message",
+        role: "user",
+        content: "Hello",
+      })
+      expect(state.chatHistory[1]).toEqual({
+        type: "message",
+        role: "assistant",
+        content: "Partial response",
+      })
+    })
   })
 
   describe("reset action", () => {
