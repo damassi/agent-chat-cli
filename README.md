@@ -4,6 +4,8 @@ A minimalist, terminal-based chat CLI built to explore the new [Claude Agent SDK
 
 Additionally, via inference, Agent Chat CLI supports lazy, turn-based MCP connections to keep token costs down and performance reasonable. The agent will only use those MCP servers you ask about, limiting the context that is sent up to the LLM. (After an MCP server is connected it remains connected, however.)
 
+For a simplified Python version of this lib, see [agent-chat-cli-python](https://github.com/damassi/agent-chat-cli-python).
+
 ## Overview
 
 The app has three modes:
